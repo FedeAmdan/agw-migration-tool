@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:spring="http://www.springframework.org/schema/beans"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
+      xmlns:expression-language="http://www.mulesoft.org/schema/mule/expression-language-gw"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/api-platform-gw http://www.mulesoft.org/schema/mule/api-platform-gw/current/mule-api-platform-gw.xsd
+http://www.mulesoft.org/schema/mule/expression-language-gw http://www.mulesoft.org/schema/mule/expression-language-gw/current/mule-expression-language-gw.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd">
+
+    <expression-language:property-placeholder location="config.properties" />
+
+    <api-platform-gw:api id="![p['api.id']]" apiName="![p['api.name']]" version="![p['api.version']]" flowRef="main">
+        <api-platform-gw:description>![p['api.description']]</api-platform-gw:description>
+    </api-platform-gw:api>
+
+    <http:listener-config name="HTTP_Listener_Configuration" host="![p['proxy.host']]" port="![p['proxy.port']]"/>
+
+    <http:request-config name="HTTP_Request_Configuration" host="![p['implementation.host']]" port="![p['implementation.port']]" basePath="![p['implementation.path']]"/>
+
+    <flow name="main">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="![p['proxy.path']]" responseStreamingMode="AUTO" parseRequest="false"/>
+        <flow-ref name="copy-headers"/>
+        <http:request config-ref="HTTP_Request_Configuration" method="#[message.inboundProperties['http.method']]" path="#[message.inboundProperties['http.request.path'].substring(message.inboundProperties['http.listener.path'].length()-2)]" parseResponse="false">
+            <http:request-builder>
+                <http:query-params expression="#[message.inboundProperties['http.query.params']]"/>
+            </http:request-builder>
+            <http:success-status-code-validator values="0..599" />
+        </http:request>
+
+        <flow-ref name="copy-headers"/>
+    </flow>
+
+    <sub-flow name="copy-headers">
+        <copy-properties propertyName="*"/>
+        <remove-property propertyName="Host"/>
+        <remove-property propertyName="Content-Length"/>
+        <remove-property propertyName="http.*"/>
+        <remove-property propertyName="MULE_*"/>
+        <remove-property propertyName="Connection"/>
+        <remove-property propertyName="transfer-encoding"/>
+    </sub-flow>
+</mule>

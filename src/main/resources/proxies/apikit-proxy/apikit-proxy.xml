@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+        xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+        xmlns:expression-language="http://www.mulesoft.org/schema/mule/expression-language-gw"
+        xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
+        xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+        http://www.mulesoft.org/schema/mule/expression-language-gw http://www.mulesoft.org/schema/mule/expression-language-gw/current/mule-expression-language-gw.xsd
+        http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+        http://www.mulesoft.org/schema/mule/api-platform-gw http://www.mulesoft.org/schema/mule/api-platform-gw/current/mule-api-platform-gw.xsd">
+
+    <expression-language:property-placeholder location="config.properties" />
+
+    <http:listener-config name="HTTP_Listener_Configuration" host="![p['proxy.host']]" port="![p['proxy.port']]"/>
+
+    <http:request-config name="HTTP_Request_Configuration" host="![p['implementation.host']]" port="![p['implementation.port']]" basePath="![p['implementation.path']]"/>
+
+    <apikit:proxy-config name="proxy-config" raml="![p['raml.location']]" disableValidations="true"/>
+
+    <api-platform-gw:api id="![p['api.id']]" apiName="![p['api.name']]" version="![p['api.version']]" apikitRef="proxy-config" flowRef="proxy">>
+        <api-platform-gw:description>![p['api.description']]</api-platform-gw:description>
+    </api-platform-gw:api>
+
+    <flow name="proxy" doc:name="HTTP Proxy">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="![p['proxy.path']]" responseStreamingMode="AUTO" parseRequest="false" />
+
+        <apikit:proxy config-ref="proxy-config"/>
+        <http:request config-ref="HTTP_Request_Configuration" method="#[message.inboundProperties['http.method']]" path="#[message.inboundProperties['http.request.path'].substring(message.inboundProperties['http.listener.path'].length()-2)]" parseResponse="false">
+            <http:request-builder>
+                <http:query-params expression="#[message.inboundProperties['http.query.params']]"/>
+            </http:request-builder>
+            <http:success-status-code-validator values="0..599" />
+        </http:request>
+        <exception-strategy ref="defaultExceptionStrategy"/>
+    </flow>
+
+    <flow name="console" doc:name="console">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="![p['proxy.path']]" responseStreamingMode="AUTO" parseRequest="false" />
+        <http:inbound-endpoint address="![p['console.uri']]"/>
+        <apikit:console config-ref="proxy-config"/>
+    </flow>
+
+    <apikit:mapping-exception-strategy name="defaultExceptionStrategy">
+        <apikit:mapping statusCode="404">
+            <apikit:exception value="org.mule.module.apikit.exception.NotFoundException"/>
+            <set-payload value="resource not found"/>
+        </apikit:mapping>
+        <apikit:mapping statusCode="405">
+            <apikit:exception value="org.mule.module.apikit.exception.MethodNotAllowedException"/>
+            <set-payload value="method not allowed"/>
+        </apikit:mapping>
+    </apikit:mapping-exception-strategy>
+</mule>
