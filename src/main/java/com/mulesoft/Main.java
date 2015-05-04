@@ -2,6 +2,8 @@ package com.mulesoft;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
+
 public class Main {
 
     public static final String ROOT_FOLDER_PROPERTY = "-DagwRootFolder";
@@ -20,11 +22,17 @@ public class Main {
         for (File proxy : proxies)
         {
             int proxyType = getProxyType(proxy.getPath());
-            FileManager.replaceXmlFile(proxy.getPath(), proxyType);
-            System.out.println("Proxy config file was replaced.");
+            if (proxyType == -1)
+            {
+                continue;
+            }
 
+            FileManager.replaceXmlFile(proxy.getPath(), proxyType);
+            PropertiesManager propertiesManager = new PropertiesManager(proxy.getPath());
+            String content = propertiesManager.getFileContent();
+            FileManager.replacePropertiesFile(proxy.getPath(), content);
         }
-        //TODO  parse properties and modify them
+        System.out.println("Migration process finished");
     }
 
     private static String getRootFolder(String[] args)
@@ -33,7 +41,7 @@ public class Main {
         {
             throw new IllegalArgumentException("Invalid property. Please use " + ROOT_FOLDER_PROPERTY);
         }
-        String folder = args[0].substring(args[0].indexOf("=")+1);
+        String folder = args[0].substring(args[0].indexOf("=") + 1);
         if (!folder.endsWith("/"))
         {
             folder = folder.concat("/");

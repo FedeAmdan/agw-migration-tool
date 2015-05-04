@@ -4,6 +4,8 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -99,7 +101,7 @@ public class FileManager {
         resultList.addAll(Arrays.asList(fList));
         for (File file : fList) {
             if (file.isFile()) {
-                System.out.println(file.getAbsolutePath());
+//                System.out.println(file.getAbsolutePath());
             } else if (file.isDirectory()) {
                 resultList.addAll(listf(file.getAbsolutePath()));
             }
@@ -130,28 +132,53 @@ public class FileManager {
 
     public static void replaceXmlFile(String appPath, int proxyType) throws IOException {
         File oldXmlFile = getXmlFile(appPath);
-        File newXmlFile = null;
+        String newXmlLines = null;
         if (proxyType == ProxyType.BARE_HTTP_PROXY) {
-            newXmlFile = new FileManager().getFileFromClassLoader(NEW_HTTP_PROXY_PATH);
+            newXmlLines = new FileManager().readFileFromClassPath(NEW_HTTP_PROXY_PATH);
         }
         else if (proxyType == ProxyType.APIKIT_PROXY){
-            newXmlFile = new FileManager().getFileFromClassLoader(NEW_APIKIT_PROXY_PATH);
+            newXmlLines = new FileManager().readFileFromClassPath(NEW_APIKIT_PROXY_PATH);
         }
         else if (proxyType == ProxyType.WSDL_PROXY){
-            newXmlFile = new FileManager().getFileFromClassLoader(NEW_WSDL_PROXY_PATH);
+            newXmlLines = new FileManager().readFileFromClassPath(NEW_WSDL_PROXY_PATH);
         }
-        if (newXmlFile == null)
+        if (newXmlLines == null)
         {
             throw new FileNotFoundException("New version of the proxy could not be found.");
         }
-        Files.copy(Paths.get(newXmlFile.getPath()),Paths.get(oldXmlFile.getPath()),
-                StandardCopyOption.COPY_ATTRIBUTES,StandardCopyOption.REPLACE_EXISTING);
-
+        Path dest = Paths.get(oldXmlFile.getPath());
+        Files.write(dest, newXmlLines.getBytes());
     }
 
-    public File getFileFromClassLoader(String file)
+    public static void replacePropertiesFile(String appPath, String newFileContent) throws IOException
     {
+//        File propertiesFile = new File(appPath + PropertiesManager.PROPERTIES_RELATIVE_PATH);
+        FileWriter writer = new FileWriter(appPath + PropertiesManager.PROPERTIES_RELATIVE_PATH);
+        BufferedWriter buffWriter = new BufferedWriter(writer);
+        buffWriter.write(newFileContent);
+        buffWriter.close();
+     }
+
+    public String readFileFromClassPath(String file){
+        String everything = "";
+
         ClassLoader classLoader = getClass().getClassLoader();
-        return new File(classLoader.getResource(file).getFile());
+        InputStreamReader stream = new InputStreamReader(classLoader.getResourceAsStream(file));
+        try(BufferedReader br = new BufferedReader(stream)) {
+            StringBuilder sb = new StringBuilder();
+            String line = br.readLine();
+
+            while (line != null) {
+                sb.append(line);
+                sb.append(System.lineSeparator());
+                line = br.readLine();
+            }
+            everything = sb.toString();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        return everything;
     }
 }
