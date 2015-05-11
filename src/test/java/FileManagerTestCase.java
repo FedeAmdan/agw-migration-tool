@@ -47,11 +47,11 @@ public class FileManagerTestCase {
     @Test
     public void getMD5() throws IOException, NoSuchAlgorithmException
     {
-        List<File> files = FileManager.listf("/Users/federicoamdan/Projects/proxies-generator/output/");
+        List<File> files = FileManager.listf("/Users/federicoamdan/Projects/proxies-generator/output/wsdl/");
 
         for (File f : files)
         {
-            System.out.println("File: " + f.getName() + " Hash: " + FileManager.hashFile(f, "MD5"));
+            System.out.println(FileManager.hashFile(f, "MD5"));
         }
     }
     //private String getMD5FromFile(String path) throws NoSuchAlgorithmException

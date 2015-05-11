@@ -2,6 +2,7 @@ package com.mulesoft;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 public class Main {
@@ -10,7 +11,8 @@ public class Main {
     public static final String APPS_FOLDER = "apps";
     public static final String APPS_BACKUP_FOLDER = "appsBackup";
 
-    public static void main(String[] args)  throws IOException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException
+    {
 
         String rootFolder = getRootFolder(args);
         System.out.println("ROOT FOLDER: " + rootFolder);
@@ -51,25 +53,46 @@ public class Main {
     }
 
 
-    private static int getProxyType(String proxyPath) throws IOException {
-        String xmlContent = FileManager.getProxyXmlContent(proxyPath);
-        if (!xmlContent.contains("![p['proxy.uri']]"))
+    private static int getProxyType(String proxyPath) throws IOException, NoSuchAlgorithmException
+    {
+        File oldXml = FileManager.getXmlFile(proxyPath);
+        String md5 = FileManager.getMD5(oldXml);
+        System.out.println("MD5 "+ md5);
+        if (FileManager.isHttpProxy(md5))
         {
-          System.out.println(proxyPath + " is NOT a generated proxy.");
-          return -1;
+            System.out.println(proxyPath + " detected as BARE HTTP PROXY");
+            return ProxyType.BARE_HTTP_PROXY;
         }
-        if (xmlContent.contains("![wsdl(p['wsdl.uri']).services[0].preferredPort.addresses[0].location]"))
+        if (FileManager.isRamlProxy(md5))
         {
-          System.out.println(proxyPath + " detected as WSDL PROXY");
-          return ProxyType.WSDL_PROXY;
+            System.out.println(proxyPath + " detected as APIKIT PROXY");
+            return ProxyType.APIKIT_PROXY;
         }
-        if (xmlContent.contains("![p['console.uri']]"))
+        if (FileManager.isWsdlProxy(md5))
         {
-          System.out.println(proxyPath + " detected as APIKIT PROXY");
-          return ProxyType.APIKIT_PROXY;
+            System.out.println(proxyPath + " detected as WSDL PROXY");
+            return ProxyType.WSDL_PROXY;
         }
-        System.out.println(proxyPath + " detected as BARE HTTP PROXY");
-        return ProxyType.BARE_HTTP_PROXY;
+        System.out.println(proxyPath + " is NOT a generated proxy.");
+        return -1;
+        //String xmlContent = FileManager.getProxyXmlContent(proxyPath);
+        //if (!xmlContent.contains("![p['proxy.uri']]"))
+        //{
+        //  System.out.println(proxyPath + " is NOT a generated proxy.");
+        //  return -1;
+        //}
+        //if (xmlContent.contains("![wsdl(p['wsdl.uri']).services[0].preferredPort.addresses[0].location]"))
+        //{
+        //  System.out.println(proxyPath + " detected as WSDL PROXY");
+        //  return ProxyType.WSDL_PROXY;
+        //}
+        //if (xmlContent.contains("![p['console.uri']]"))
+        //{
+        //  System.out.println(proxyPath + " detected as APIKIT PROXY");
+        //  return ProxyType.APIKIT_PROXY;
+        //}
+        //System.out.println(proxyPath + " detected as BARE HTTP PROXY");
+        //return ProxyType.BARE_HTTP_PROXY;
     }
 
 }
