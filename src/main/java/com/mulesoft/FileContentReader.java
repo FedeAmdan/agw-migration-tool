@@ -8,11 +8,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
-public class FileContent
+public class FileContentReader
 {
     private final String content;
     private static final Charset DEFAULT_CHARSET =  StandardCharsets.UTF_8;
-    public FileContent(String path) throws IOException
+    public FileContentReader(String path) throws IOException
     {
         byte[] encoded = Files.readAllBytes(Paths.get(path));
         content = new String(encoded, DEFAULT_CHARSET);
