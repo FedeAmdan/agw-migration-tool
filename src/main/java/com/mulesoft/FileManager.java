@@ -8,6 +8,8 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -180,5 +182,37 @@ public class FileManager {
             e.printStackTrace();
         }
         return everything;
+    }
+
+    public static String getMD5(File file) throws IOException, NoSuchAlgorithmException
+    {
+        return hashFile(file, "MD5");
+    }
+
+    public static String hashFile(File file, String algorithm) throws NoSuchAlgorithmException, IOException
+    {
+        FileInputStream inputStream = new FileInputStream(file);
+        MessageDigest digest = MessageDigest.getInstance(algorithm);
+
+        byte[] bytesBuffer = new byte[1024];
+        int bytesRead = -1;
+
+        while ((bytesRead = inputStream.read(bytesBuffer)) != -1) {
+            digest.update(bytesBuffer, 0, bytesRead);
+        }
+
+        byte[] hashedBytes = digest.digest();
+
+        return convertByteArrayToHexString(hashedBytes);
+
+    }
+
+    private static String convertByteArrayToHexString(byte[] arrayBytes) {
+        StringBuffer stringBuffer = new StringBuffer();
+        for (int i = 0; i < arrayBytes.length; i++) {
+            stringBuffer.append(Integer.toString((arrayBytes[i] & 0xff) + 0x100, 16)
+                                        .substring(1));
+        }
+        return stringBuffer.toString();
     }
 }
