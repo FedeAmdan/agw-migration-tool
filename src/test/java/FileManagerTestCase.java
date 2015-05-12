@@ -1,5 +1,6 @@
 import com.mulesoft.FileManager;
 import com.mulesoft.Main;
+import com.mulesoft.ProxyCreator;
 import com.mulesoft.ProxyType;
 
 import org.junit.Test;
@@ -44,16 +45,16 @@ public class FileManagerTestCase {
     //    FileManager.replaceXmlFile("/Users/federicoamdan/migrationToolTestFolder/apps/old-apikit-proxy", ProxyType.APIKIT_PROXY);
     //
     //}
-    @Test
-    public void getMD5() throws IOException, NoSuchAlgorithmException
-    {
-        List<File> files = FileManager.listf("/Users/federicoamdan/Projects/proxies-generator/output/wsdl/");
-
-        for (File f : files)
-        {
-            System.out.println(FileManager.hashFile(f, "MD5"));
-        }
-    }
+    //@Test
+    //public void getMD5() throws IOException, NoSuchAlgorithmException
+    //{
+    //    List<File> files = FileManager.listf("/Users/federicoamdan/Projects/proxies-generator/output/wsdl/");
+    //
+    //    for (File f : files)
+    //    {
+    //        System.out.println(FileManager.hashFile(f, "MD5"));
+    //    }
+    //}
     //private String getMD5FromFile(String path) throws NoSuchAlgorithmException
     //{
     //    File file = Paths.get("/path/to/file").toFile();
@@ -61,7 +62,13 @@ public class FileManagerTestCase {
     //
     //    byte[] hash = MessageDigest.getInstance("MD5").digest(b);
     //}
-
+    //@Test
+    //public void generateTemplate() throws IOException
+    //{
+    //    ProxyCreator creator = new ProxyCreator();
+    //    String generatedProxy = creator.processTemplate(0);
+    //    String test = "";
+    //}
 
 
 }

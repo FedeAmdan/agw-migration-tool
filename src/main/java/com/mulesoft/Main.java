@@ -24,15 +24,20 @@ public class Main {
         for (File proxy : proxies)
         {
             int proxyType = getProxyType(proxy.getPath());
-            if (proxyType == -1)
+            if (proxyType == ProxyType.INVALID)
             {
                 continue;
             }
-
-            FileManager.replaceXmlFile(proxy.getPath(), proxyType);
+            FileContentAnalizer contentAnalizer = new FileContentAnalizer(proxy.getPath());
+            System.out.println(contentAnalizer.showResults());
+            ProxyCreator proxyCreator = new ProxyCreator(proxy.getPath(), contentAnalizer);
+            proxyCreator.processTemplate(proxyType);
+            System.out.println("Xml file created");
+            //FileManager.replaceXmlFile(proxy.getPath(), proxyType);
             PropertiesManager propertiesManager = new PropertiesManager(proxy.getPath());
             String content = propertiesManager.getFileContent();
             FileManager.replacePropertiesFile(proxy.getPath(), content);
+            System.out.println("Properties file created");
         }
         System.out.println("Migration process finished");
     }

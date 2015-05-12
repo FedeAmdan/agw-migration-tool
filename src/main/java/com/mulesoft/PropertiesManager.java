@@ -40,7 +40,7 @@ public class PropertiesManager {
         Iterator iterator = oldProperties.entrySet().iterator();
         while (iterator.hasNext())
         {
-            Map.Entry mapEntry = (Map.Entry) iterator.next();
+            Map.Entry mapEntry = (Map.Entry) iterator.next();//TODO MISSING OLD PROPERTIES
             if (mapEntry.getKey().toString().contains(".uri"))
             {
                 String[] split = mapEntry.getKey().toString().split("\\.");

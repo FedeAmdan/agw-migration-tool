@@ -4,6 +4,7 @@ public interface ProxyType {
     public static int BARE_HTTP_PROXY = 0;
     public static int APIKIT_PROXY = 1;
     public static int WSDL_PROXY = 2;
+    public static int INVALID = -1;
 
 //    private int proxyType = -1;
 //

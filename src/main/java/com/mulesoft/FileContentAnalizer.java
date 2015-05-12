@@ -8,19 +8,17 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
-public class FileContentReader
+public class FileContentAnalizer
 {
     private final String content;
     private static final Charset DEFAULT_CHARSET =  StandardCharsets.UTF_8;
-    public FileContentReader(String path) throws IOException
+    File xmlFile = null;
+    public FileContentAnalizer(String appPath) throws IOException
     {
-        byte[] encoded = Files.readAllBytes(Paths.get(path));
+        xmlFile = FileManager.getXmlFile(appPath);
+        //byte[] encoded = Files.readAllBytes(Paths.get(xmlFile.toPath()getPath()));
+        byte[] encoded = Files.readAllBytes(xmlFile.toPath());
         content = new String(encoded, DEFAULT_CHARSET);
-    }
-
-    public List<String> getFileContentAsList(String path) throws IOException
-    {
-        return Files.readAllLines(Paths.get(path), DEFAULT_CHARSET);
     }
 
     public boolean containsDescription()
@@ -37,4 +35,18 @@ public class FileContentReader
     {
         return content.contains("https:in");
     }
-}
+
+    public boolean hasApikitRef()
+    {
+        return content.contains("apikitRef");
+    }
+
+    public File getXmlFile()
+    {
+        return xmlFile;
+    }
+    public String showResults()
+    {
+        return "Descrption: " + containsDescription() + " apiIsHttps: " + apiIsHttps() + " proxyIsHttps: " + proxyIsHttps() + " hasApikitRef: " + hasApikitRef();
+    }
+ }
