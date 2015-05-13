@@ -117,6 +117,7 @@ public class FileManager {
     //}
 
     public static File getXmlFile(String appPath) throws FileNotFoundException {
+        System.out.println("Fetching xml file from: " + appPath);
         List<File> files = listf(appPath);
         for(File file : files) {
             if (file.getName().endsWith(".xml")) {

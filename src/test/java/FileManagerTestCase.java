@@ -65,8 +65,8 @@ public class FileManagerTestCase {
     //@Test
     //public void generateTemplate() throws IOException
     //{
-    //    ProxyCreator creator = new ProxyCreator();
-    //    String generatedProxy = creator.processTemplate(0);
+    //    ProxyCreator creator = new ProxyCreator("",true,false,false,false);
+    //    creator.processTemplate(0);
     //    String test = "";
     //}
 

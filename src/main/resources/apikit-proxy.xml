@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:spring="http://www.springframework.org/schema/beans"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+        #if ($proxyHttps || $apiHttps)
+        xmlns:https="http://www.mulesoft.org/schema/mule/https"
+        #end
+        #if ( $proxyHttps )
+        xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+        #end
+        xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
+        xmlns:expression-language="http://www.mulesoft.org/schema/mule/expression-language-gw"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+        #if ($proxyHttps || $apiHttps)
+        http://www.mulesoft.org/schema/mule/https http://www.mulesoft.org/schema/mule/https/current/mule-https.xsd
+        #end
+        http://www.mulesoft.org/schema/mule/api-platform-gw http://www.mulesoft.org/schema/mule/api-platform-gw/current/mule-api-platform-gw.xsd
+        http://www.mulesoft.org/schema/mule/expression-language-gw http://www.mulesoft.org/schema/mule/expression-language-gw/current/mule-expression-language-gw.xsd
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd">
+
+    <expression-language:property-placeholder location="config.properties" />
+
+#if ( $proxyHttps )
+    <tls:context name="TLS-CONTEXT-LISTENER">
+        <tls:key-store path="![p['keystore.location']]" password="![p['keystore.password']]" keyPassword="![p['keystore.key.password']]"/>
+    </tls:context>
+#end
+#if( $hasApikitRef )
+    <api-platform-gw:api id="![p['api.id']]" apiName="![p['api.name']]" version="![p['api.version']]" flowRef="main" apikitRef="proxy-config">
+#else
+    <api-platform-gw:api id="![p['api.id']]" apiName="![p['api.name']]" version="![p['api.version']]" flowRef="main">
+#end
+#if( $hasDescription )
+        <api-platform-gw:description>![p['api.description']]</api-platform-gw:description>
+#end
+    </api-platform-gw:api>
+
+#if ( $proxyHttps )
+    <http:listener-config name="HTTP_Listener_Configuration" host="![p['proxy.host']]" port="![p['proxy.port']]" protocol="HTTPS" tlsContext-ref="TLS-CONTEXT-LISTENER"/>
+#else
+    <http:listener-config name="HTTP_Listener_Configuration" host="![p['proxy.host']]" port="![p['proxy.port']]" protocol="HTTP"/>
+#end
+
+#if ( $apiHttps )
+    <http:request-config name="HTTP_Request_Configuration" host="![p['implementation.host']]" port="![p['implementation.port']]" basePath="![p['implementation.path']]" protocol="HTTPS"/>
+#else
+    <http:request-config name="HTTP_Request_Configuration" host="![p['implementation.host']]" port="![p['implementation.port']]" basePath="![p['implementation.path']]" protocol="HTTP"/>
+#end
+
+    <apikit:proxy-config name="proxy-config" raml="![p['raml.location']]" disableValidations="true"/>
+
+    <flow name="proxy" doc:name="HTTP Proxy">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="![p['proxy.path']]" responseStreamingMode="AUTO" parseRequest="false" />
+
+        <apikit:proxy config-ref="proxy-config"/>
+        <http:request config-ref="HTTP_Request_Configuration" method="#[message.inboundProperties['http.method']]" path="#[message.inboundProperties['http.request.path'].substring(message.inboundProperties['http.listener.path'].length()-2)]" parseResponse="false">
+            <http:request-builder>
+                <http:query-params expression="#[message.inboundProperties['http.query.params']]"/>
+            </http:request-builder>
+            <http:success-status-code-validator values="0..599" />
+        </http:request>
+        <exception-strategy ref="defaultExceptionStrategy"/>
+    </flow>
+
+    <flow name="console" doc:name="console">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="![p['proxy.path']]" responseStreamingMode="AUTO" parseRequest="false" />
+        <http:inbound-endpoint address="![p['console.uri']]"/>
+        <apikit:console config-ref="proxy-config"/>
+    </flow>
+
+    <apikit:mapping-exception-strategy name="defaultExceptionStrategy">
+        <apikit:mapping statusCode="404">
+            <apikit:exception value="org.mule.module.apikit.exception.NotFoundException"/>
+            <set-payload value="resource not found"/>
+        </apikit:mapping>
+        <apikit:mapping statusCode="405">
+            <apikit:exception value="org.mule.module.apikit.exception.MethodNotAllowedException"/>
+            <set-payload value="method not allowed"/>
+        </apikit:mapping>
+    </apikit:mapping-exception-strategy>
+</mule>
+
+
+        <?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:spring="http://www.springframework.org/schema/beans"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+        #if ($proxyHttps || $apiHttps)
+        xmlns:https="http://www.mulesoft.org/schema/mule/https"
+        #end
+        #if ( $proxyHttps )
+        xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+        #end
+        xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
+        xmlns:expression-language="http://www.mulesoft.org/schema/mule/expression-language-gw"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+        #if ($proxyHttps || $apiHttps)
+        http://www.mulesoft.org/schema/mule/https http://www.mulesoft.org/schema/mule/https/current/mule-https.xsd
+        #end
+        http://www.mulesoft.org/schema/mule/api-platform-gw http://www.mulesoft.org/schema/mule/api-platform-gw/current/mule-api-platform-gw.xsd
+        http://www.mulesoft.org/schema/mule/expression-language-gw http://www.mulesoft.org/schema/mule/expression-language-gw/current/mule-expression-language-gw.xsd
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd">
+
+<expression-language:property-placeholder location="config.properties" />
+
+        #if ( $proxyHttps )
+<tls:context name="TLS-CONTEXT-LISTENER">
+<tls:key-store path="![p['keystore.location']]" password="![p['keystore.password']]" keyPassword="![p['keystore.key.password']]"/>
+<tls:key-store path="keystore.jks" password="mule1234" keyPassword="mule1234"/>
+</tls:context>
+        #end
+
+<api-platform-gw:api id="![p['api.id']]" apiName="![p['api.name']]" version="![p['api.version']]" flowRef="main">
+#if( $hasDescription )
+<api-platform-gw:description>![p['api.description']]</api-platform-gw:description>
+#end
+</api-platform-gw:api>
+
+        #if ( $proxyHttps )
+<http:listener-config name="HTTP_Listener_Configuration" host="![p['proxy.host']]" port="![p['proxy.port']]" protocol="HTTPS" tlsContext-ref="TLS-CONTEXT-LISTENER"/>
+        #else
+<http:listener-config name="HTTP_Listener_Configuration" host="![p['proxy.host']]" port="![p['proxy.port']]" protocol="HTTP"/>
+        #end
+
+<http:request-config name="HTTP_Request_Configuration" host="![p['implementation.host']]" port="![p['implementation.port']]" basePath="![p['implementation.path']]"/>

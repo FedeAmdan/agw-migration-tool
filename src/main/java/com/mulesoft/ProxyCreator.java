@@ -1,20 +1,15 @@
 package com.mulesoft;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.net.URL;
-import java.util.Map;
 import java.util.Properties;
 
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
-import org.apache.velocity.app.VelocityEngine;
 
 public class ProxyCreator
 {
@@ -73,23 +68,24 @@ public class ProxyCreator
         this.hasApikitRef = hasApikitRef;
     }
 
-    private static final String NEW_WSDL_PROXY_PATH = "/wsdl-proxy/wsdl-proxy.xml";
-    private static final String NEW_APIKIT_PROXY_PATH = "/apikit-proxy/apikit-proxy.xml";
-    private static final String NEW_HTTP_PROXY_PATH = "/bare-http-proxy/bare-http-proxy.xml";
+    private static final String NEW_WSDL_PROXY_PATH = "/wsdl-proxy.xml";
+    private static final String NEW_APIKIT_PROXY_PATH = "/apikit-proxy.xml";
+    private static final String NEW_HTTP_PROXY_PATH = "/bare-http-proxy.xml";
     private String appPath;
+    private File xmlFile;
+    //
+    //public ProxyCreator (String appPath, boolean hasDescription, boolean isProxyHttps, boolean isApiHttps, boolean hasApikitRef)
+    //{
+    //    this.appPath = appPath;
+    //    setHasApikitRef(hasApikitRef);
+    //    setApiHttps(isApiHttps);
+    //    setHasDescription(hasDescription);
+    //    setProxyHttps(isProxyHttps);
+    //}
 
-    public ProxyCreator (String appPath, boolean hasDescription, boolean isProxyHttps, boolean isApiHttps, boolean hasApikitRef)
+    public ProxyCreator (FileContentAnalizer contentAnalizer)
     {
-        this.appPath = appPath;
-        setHasApikitRef(hasApikitRef);
-        setApiHttps(isApiHttps);
-        setHasDescription(hasDescription);
-        setProxyHttps(isProxyHttps);
-    }
-
-    public ProxyCreator (String appPath, FileContentAnalizer contentAnalizer)
-    {
-        this.appPath = appPath;
+        xmlFile = contentAnalizer.getXmlFile();
         setHasApikitRef(contentAnalizer.hasApikitRef());
         setApiHttps(contentAnalizer.apiIsHttps());
         setHasDescription(contentAnalizer.containsDescription());
@@ -100,23 +96,25 @@ public class ProxyCreator
     {
         try {
 
-            VelocityContext context = new VelocityContext();
+            System.out.println("Adding properties to velocity context");
+            org.apache.velocity.context.Context context = new VelocityContext();
             context.put("hasDescription", hasDescription);
             context.put("proxyHttps", isProxyHttps);
             context.put("apiHttps", isApiHttps);
-            //TODO APIKITREF
+            context.put("hasApikitRef", hasApikitRef);
 
             Properties props = new Properties();
-            props.put("file.resource.loader.path", "/Users/federicoamdan/Projects/agw-migration-tool/src/main/resources/proxies"); //TODO REMOVE HARDCODED URI
+            props.put("file.resource.loader.path", "/Users/federicoamdan/Projects/agw-migration-tool/src/main/resources"); //TODO REMOVE HARDCODED URI
             Velocity.init(props);
+            //Velocity.init();
+            System.out.println("Properties created, velocity initialized");
+
             Template t = Velocity.getTemplate(getTemplate(proxyType),"UTF-8");
-            //StringWriter sw = new StringWriter();
-            //BufferedWriter bw = new BufferedWriter(sw);
-            FileWriter writer = new FileWriter(appPath + PropertiesManager.PROPERTIES_RELATIVE_PATH);
+            FileWriter writer = new FileWriter(xmlFile.getPath());
             BufferedWriter buffWriter = new BufferedWriter(writer);
-            //buffWriter.write(newFileContent);
-            //buffWriter.close();
             t.merge(context,buffWriter);
+
+            System.out.println("Template merged to properties");
             buffWriter.flush();
         }
         catch (  Exception e) {
@@ -126,43 +124,15 @@ public class ProxyCreator
 
     private String getTemplate(int proxyType) throws FileNotFoundException
     {
-        String newXmlLines = null;
         if (proxyType == ProxyType.BARE_HTTP_PROXY) {
-            newXmlLines = readFileFromClassPath(NEW_HTTP_PROXY_PATH);
+            return NEW_HTTP_PROXY_PATH;//readFileFromClassPath(NEW_HTTP_PROXY_PATH);
         }
         else if (proxyType == ProxyType.APIKIT_PROXY){
-            newXmlLines = readFileFromClassPath(NEW_APIKIT_PROXY_PATH);
+            return NEW_APIKIT_PROXY_PATH;//readFileFromClassPath(NEW_APIKIT_PROXY_PATH);
         }
         else if (proxyType == ProxyType.WSDL_PROXY){
-            newXmlLines = readFileFromClassPath(NEW_WSDL_PROXY_PATH);
+            return NEW_WSDL_PROXY_PATH;//readFileFromClassPath(NEW_WSDL_PROXY_PATH);
         }
-        if (newXmlLines == null)
-        {
-            throw new FileNotFoundException("New version of the proxy could not be found.");
-        }
-        return newXmlLines;
-    }
-
-    public String readFileFromClassPath(String file){
-        String everything = "";
-
-        ClassLoader classLoader = getClass().getClassLoader();
-        InputStreamReader stream = new InputStreamReader(classLoader.getResourceAsStream(file));
-        try(BufferedReader br = new BufferedReader(stream)) {
-            StringBuilder sb = new StringBuilder();
-            String line = br.readLine();
-
-            while (line != null) {
-                sb.append(line);
-                sb.append(System.lineSeparator());
-                line = br.readLine();
-            }
-            everything = sb.toString();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-        return everything;
+        throw new FileNotFoundException("New version of the proxy could not be found.");
     }
 }

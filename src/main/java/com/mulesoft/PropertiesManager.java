@@ -36,27 +36,75 @@ public class PropertiesManager {
 
     private Map<String, String> modifyProperties( Map<String, String> oldProperties)
     {
+        if (isOldTypeOfProxy(oldProperties))
+        {
+            return modifyPropertiesOfOldTypeOfProxy(oldProperties);
+        }
+        else
+        {
+            return modifyPropertiesOfNewTypeOfProxy(oldProperties);
+        }
+    }
+
+    private Map<String, String> modifyPropertiesOfOldTypeOfProxy( Map<String, String> oldProperties)
+    {
         Map<String, String> newProperties = new HashMap<>();
+
         Iterator iterator = oldProperties.entrySet().iterator();
         while (iterator.hasNext())
         {
-            Map.Entry mapEntry = (Map.Entry) iterator.next();//TODO MISSING OLD PROPERTIES
-            if (mapEntry.getKey().toString().contains(".uri"))
+            Map.Entry mapEntry = (Map.Entry) iterator.next();
+            String key = mapEntry.getKey().toString();
+            String value = mapEntry.getValue().toString();
+            if (key.equals("http.proxy"))
             {
-                String[] split = mapEntry.getKey().toString().split("\\.");
+                newProperties.put("proxy.host", "0.0.0.0");
+                newProperties.put("proxy.port", value);
+                newProperties.put("proxy.path", "/*");
+            }
+            else if (key.equals("proxy.uri"))
+            {
+                newProperties.put("implementation.host", getHostFromUri(value));
+                newProperties.put("implementation.port", getPortFromUri(value));
+                newProperties.put("implementation.path", getPathFromUri(value, false));
+            }
+            else if (key.equals("raml.uri"))
+            {
+                newProperties.put("raml.location", value);
+            }
+            else
+            {
+                newProperties.put(key, value);
+            }
+        }
+        return newProperties;
+    }
+
+    private Map<String, String> modifyPropertiesOfNewTypeOfProxy( Map<String, String> oldProperties)
+    {
+        Map<String, String> newProperties = new HashMap<>();
+
+        Iterator iterator = oldProperties.entrySet().iterator();
+        while (iterator.hasNext())
+        {
+            Map.Entry mapEntry = (Map.Entry) iterator.next();
+            String key = mapEntry.getKey().toString();
+            String value = mapEntry.getValue().toString();
+            if (key.contains(".uri") && !key.equals("wsdl.uri"))
+            {
+                String[] split = key.split("\\.");
                 String name = split[0];
 
                 boolean addAsterisk = name.equals("proxy");
-                String url = mapEntry.getValue().toString();
                 if (name.equals("console"))
                 {
-                    newProperties.put(name + ".path", getPathFromUri(url,addAsterisk));
+                    newProperties.put(name + ".path", getPathFromUri(value,addAsterisk));
                 }
                 else
                 {
-                    newProperties.put(name + ".host", getHostFromUri(url));
-                    newProperties.put(name + ".port", getPortFromUri(url));
-                    newProperties.put(name + ".path", getPathFromUri(url, addAsterisk));
+                    newProperties.put(name + ".host", getHostFromUri(value));
+                    newProperties.put(name + ".port", getPortFromUri(value));
+                    newProperties.put(name + ".path", getPathFromUri(value, addAsterisk));
                 }
             }
             else
@@ -66,6 +114,21 @@ public class PropertiesManager {
         }
         return newProperties;
     }
+
+    private boolean isOldTypeOfProxy(Map<String, String> oldProperties)
+    {
+        Iterator iterator = oldProperties.entrySet().iterator();
+        while (iterator.hasNext())
+        {
+            Map.Entry mapEntry = (Map.Entry) iterator.next();
+            if (mapEntry.getKey().toString().equals("http.port"))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     public String getFileContent()
     {

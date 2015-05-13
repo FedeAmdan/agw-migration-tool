@@ -22,17 +22,17 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
 
     <expression-language:property-placeholder location="config.properties" />
 
-    #if ( $proxyHttps )
+#if ( $proxyHttps )
     <tls:context name="TLS-CONTEXT-LISTENER">
         <tls:key-store path="![p['keystore.location']]" password="![p['keystore.password']]" keyPassword="![p['keystore.key.password']]"/>
         <tls:key-store path="keystore.jks" password="mule1234" keyPassword="mule1234"/>
     </tls:context>
-    #end
+#end
 
     <api-platform-gw:api id="![p['api.id']]" apiName="![p['api.name']]" version="![p['api.version']]" flowRef="main">
-        #if( $hasDescription )
+#if( $hasDescription )
         <api-platform-gw:description>![p['api.description']]</api-platform-gw:description>
-        #end
+#end
     </api-platform-gw:api>
 
 #if ( $proxyHttps )
@@ -41,14 +41,14 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
     <http:listener-config name="HTTP_Listener_Configuration" host="![p['proxy.host']]" port="![p['proxy.port']]" protocol="HTTP"/>
 #end
 
-    <http:request-config name="HTTP_Request_Configuration" host="![p['implementation.host']]" port="![p['implementation.port']]" basePath="![p['implementation.path']]"/>
+#if ( $apiHttps )
+    <http:request-config name="HTTP_Request_Configuration" host="![p['implementation.host']]" port="![p['implementation.port']]" basePath="![p['implementation.path']]" protocol="HTTPS"/>
+#else
+    <http:request-config name="HTTP_Request_Configuration" host="![p['implementation.host']]" port="![p['implementation.port']]" basePath="![p['implementation.path']]" protocol="HTTP"/>
+#end
 
     <flow name="main">
-#if ($proxyHttps )
         <http:listener config-ref="HTTP_Listener_Configuration" path="![p['proxy.path']]" responseStreamingMode="AUTO" parseRequest="false"/>
-#else
-        <http:listener config-ref="HTTP_Listener_Configuration" path="![p['proxy.path']]" responseStreamingMode="AUTO" parseRequest="false"/>
-#end
         <flow-ref name="copy-headers"/>
         <http:request config-ref="HTTP_Request_Configuration" method="#[message.inboundProperties['http.method']]" path="#[message.inboundProperties['http.request.path'].substring(message.inboundProperties['http.listener.path'].length()-2)]" parseResponse="false">
             <http:request-builder>

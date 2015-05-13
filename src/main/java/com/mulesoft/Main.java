@@ -2,6 +2,8 @@ package com.mulesoft;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
@@ -21,6 +23,11 @@ public class Main {
         System.out.println("Backup completed");
 
         File[] proxies = FileManager.listApps(rootFolder + APPS_FOLDER);
+        if (proxies == null || proxies.length == 0)
+        {
+            System.out.println("No apps found in " + rootFolder + APPS_FOLDER);
+            return;
+        }
         for (File proxy : proxies)
         {
             int proxyType = getProxyType(proxy.getPath());
@@ -30,7 +37,8 @@ public class Main {
             }
             FileContentAnalizer contentAnalizer = new FileContentAnalizer(proxy.getPath());
             System.out.println(contentAnalizer.showResults());
-            ProxyCreator proxyCreator = new ProxyCreator(proxy.getPath(), contentAnalizer);
+            System.out.println("Content analizer finished");
+            ProxyCreator proxyCreator = new ProxyCreator(contentAnalizer);
             proxyCreator.processTemplate(proxyType);
             System.out.println("Xml file created");
             //FileManager.replaceXmlFile(proxy.getPath(), proxyType);
@@ -60,6 +68,11 @@ public class Main {
 
     private static int getProxyType(String proxyPath) throws IOException, NoSuchAlgorithmException
     {
+        if (!Files.isDirectory(Paths.get(proxyPath)))
+        {
+            System.out.println(proxyPath + " is NOT a generated proxy.");
+            return ProxyType.INVALID;
+        }
         File oldXml = FileManager.getXmlFile(proxyPath);
         String md5 = FileManager.getMD5(oldXml);
         System.out.println("MD5 "+ md5);
@@ -79,25 +92,7 @@ public class Main {
             return ProxyType.WSDL_PROXY;
         }
         System.out.println(proxyPath + " is NOT a generated proxy.");
-        return -1;
-        //String xmlContent = FileManager.getProxyXmlContent(proxyPath);
-        //if (!xmlContent.contains("![p['proxy.uri']]"))
-        //{
-        //  System.out.println(proxyPath + " is NOT a generated proxy.");
-        //  return -1;
-        //}
-        //if (xmlContent.contains("![wsdl(p['wsdl.uri']).services[0].preferredPort.addresses[0].location]"))
-        //{
-        //  System.out.println(proxyPath + " detected as WSDL PROXY");
-        //  return ProxyType.WSDL_PROXY;
-        //}
-        //if (xmlContent.contains("![p['console.uri']]"))
-        //{
-        //  System.out.println(proxyPath + " detected as APIKIT PROXY");
-        //  return ProxyType.APIKIT_PROXY;
-        //}
-        //System.out.println(proxyPath + " detected as BARE HTTP PROXY");
-        //return ProxyType.BARE_HTTP_PROXY;
+        return ProxyType.INVALID;
     }
 
 }
