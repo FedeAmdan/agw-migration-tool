@@ -7,42 +7,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 
 public class ProxyCreator
 {
-    //VelocityEngine ve = new VelocityEngine();
-    //ve.init();
-    ///*  next, get the Template  */
-    //Template t = ve.getTemplate( "helloworld.vm" );
-    ///*  create a context and add data */
-    //VelocityContext context = new VelocityContext();
-    //context.put("name", "World");
-    ///* now render the template into a StringWriter */
-    //StringWriter writer = new StringWriter();
-    //t.merge( context, writer );
-    //    /* show the World */
-    //System.out.println( writer.toString() );
+    final static Logger logger = Logger.getLogger(ProxyCreator.class);
 
-    //Properties properties = new Properties();
-    //properties.load( getClass().getClassLoader().getResourceAsStream( "velocity.properties" ) );
-    //
-    //// Create and initialize the template engine
-    //velocityEngine = new VelocityEngine( properties );
-    //public void test (){
-    //VelocityContext ctx = new VelocityContext();
-    //ctx.put("parseCheck",new TemplateChecker());
-    //for (  Map.Entry<Object,Object> entry : props.entrySet())
-    //{
-    //    ctx.put(entry.getKey().toString(), entry.getValue());
-    //}
-
-    //final StringWriter stringWriter=new StringWriter();
-    //Template template = Velocity.getTemplate(templatePath);
-    //template.merge(ctx,stringWriter);
-    //return stringWriter.toString();
     private boolean hasDescription = true;
     private boolean isApiHttps = false;
     private boolean isProxyHttps = false;
@@ -63,7 +37,7 @@ public class ProxyCreator
         this.isProxyHttps = isProxyHttps;
     }
 
-    public void setHasApikitRef(boolean hasApikitRef)
+    public void setHasApikitRef (boolean hasApikitRef)
     {
         this.hasApikitRef = hasApikitRef;
     }
@@ -71,32 +45,23 @@ public class ProxyCreator
     private static final String NEW_WSDL_PROXY_PATH = "/wsdl-proxy.xml";
     private static final String NEW_APIKIT_PROXY_PATH = "/apikit-proxy.xml";
     private static final String NEW_HTTP_PROXY_PATH = "/bare-http-proxy.xml";
-    private String appPath;
     private File xmlFile;
-    //
-    //public ProxyCreator (String appPath, boolean hasDescription, boolean isProxyHttps, boolean isApiHttps, boolean hasApikitRef)
-    //{
-    //    this.appPath = appPath;
-    //    setHasApikitRef(hasApikitRef);
-    //    setApiHttps(isApiHttps);
-    //    setHasDescription(hasDescription);
-    //    setProxyHttps(isProxyHttps);
-    //}
 
-    public ProxyCreator (FileContentAnalizer contentAnalizer)
+    public ProxyCreator (File xmlFile, boolean hasApikitRef, boolean apiIsHttps, boolean proxyIsHttps, boolean containsDescription)
     {
-        xmlFile = contentAnalizer.getXmlFile();
-        setHasApikitRef(contentAnalizer.hasApikitRef());
-        setApiHttps(contentAnalizer.apiIsHttps());
-        setHasDescription(contentAnalizer.containsDescription());
-        setProxyHttps(contentAnalizer.proxyIsHttps());
+        BasicConfigurator.configure();
+        this.xmlFile = xmlFile;
+        setHasApikitRef(hasApikitRef);
+        setApiHttps(apiIsHttps);
+        setHasDescription(containsDescription);
+        setProxyHttps(proxyIsHttps);
     }
 
     public void processTemplate(int proxyType) throws IOException
     {
         try {
 
-            System.out.println("Adding properties to velocity context");
+            logger.debug("Adding properties to velocity context");
             org.apache.velocity.context.Context context = new VelocityContext();
             context.put("hasDescription", hasDescription);
             context.put("proxyHttps", isProxyHttps);
@@ -104,17 +69,17 @@ public class ProxyCreator
             context.put("hasApikitRef", hasApikitRef);
 
             Properties props = new Properties();
-            props.put("file.resource.loader.path", "/Users/federicoamdan/Projects/agw-migration-tool/src/main/resources"); //TODO REMOVE HARDCODED URI
+            props.setProperty("resource.loader", "class");
+            props.setProperty("class.resource.loader.class", "org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader");
             Velocity.init(props);
-            //Velocity.init();
-            System.out.println("Properties created, velocity initialized");
+            logger.debug("Properties created, velocity initialized");
 
             Template t = Velocity.getTemplate(getTemplate(proxyType),"UTF-8");
             FileWriter writer = new FileWriter(xmlFile.getPath());
             BufferedWriter buffWriter = new BufferedWriter(writer);
             t.merge(context,buffWriter);
 
-            System.out.println("Template merged to properties");
+            logger.debug("Template merged to properties");
             buffWriter.flush();
         }
         catch (  Exception e) {
@@ -125,13 +90,13 @@ public class ProxyCreator
     private String getTemplate(int proxyType) throws FileNotFoundException
     {
         if (proxyType == ProxyType.BARE_HTTP_PROXY) {
-            return NEW_HTTP_PROXY_PATH;//readFileFromClassPath(NEW_HTTP_PROXY_PATH);
+            return NEW_HTTP_PROXY_PATH;
         }
         else if (proxyType == ProxyType.APIKIT_PROXY){
-            return NEW_APIKIT_PROXY_PATH;//readFileFromClassPath(NEW_APIKIT_PROXY_PATH);
+            return NEW_APIKIT_PROXY_PATH;
         }
         else if (proxyType == ProxyType.WSDL_PROXY){
-            return NEW_WSDL_PROXY_PATH;//readFileFromClassPath(NEW_WSDL_PROXY_PATH);
+            return NEW_WSDL_PROXY_PATH;
         }
         throw new FileNotFoundException("New version of the proxy could not be found.");
     }

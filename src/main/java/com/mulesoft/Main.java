@@ -5,27 +5,34 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
-import java.util.Map;
+
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 
 public class Main {
 
     public static final String ROOT_FOLDER_PROPERTY = "-DagwRootFolder";
     public static final String APPS_FOLDER = "apps";
     public static final String APPS_BACKUP_FOLDER = "appsBackup";
+    final static Logger logger = Logger.getLogger(Main.class);
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException
     {
-
+        BasicConfigurator.configure();
         String rootFolder = getRootFolder(args);
-        System.out.println("ROOT FOLDER: " + rootFolder);
-        System.out.println("Creating backup of apps folder in : " + rootFolder + APPS_BACKUP_FOLDER);
+        if(logger.isDebugEnabled()){
+            logger.debug("Root folder: " + rootFolder);
+        }
+        logger.info("");
+        logger.info("Creating backup of apps folder in : " + rootFolder + APPS_BACKUP_FOLDER);
         FileManager.copyFolder(rootFolder + APPS_FOLDER, rootFolder + APPS_BACKUP_FOLDER);
-        System.out.println("Backup completed");
-
+        logger.info("Backup completed");
+        logger.info("");
+        logger.info("Proxies analisis:");
         File[] proxies = FileManager.listApps(rootFolder + APPS_FOLDER);
         if (proxies == null || proxies.length == 0)
         {
-            System.out.println("No apps found in " + rootFolder + APPS_FOLDER);
+            logger.info("No apps found in " + rootFolder + APPS_FOLDER);
             return;
         }
         for (File proxy : proxies)
@@ -35,19 +42,21 @@ public class Main {
             {
                 continue;
             }
-            FileContentAnalizer contentAnalizer = new FileContentAnalizer(proxy.getPath());
-            System.out.println(contentAnalizer.showResults());
-            System.out.println("Content analizer finished");
-            ProxyCreator proxyCreator = new ProxyCreator(contentAnalizer);
-            proxyCreator.processTemplate(proxyType);
-            System.out.println("Xml file created");
-            //FileManager.replaceXmlFile(proxy.getPath(), proxyType);
             PropertiesManager propertiesManager = new PropertiesManager(proxy.getPath());
             String content = propertiesManager.getFileContent();
             FileManager.replacePropertiesFile(proxy.getPath(), content);
-            System.out.println("Properties file created");
+            logger.info("Properties file created");
+
+            FileContentAnalizer contentAnalizer = new FileContentAnalizer(proxy.getPath());
+            logger.debug(contentAnalizer.showResults());
+            logger.info("Content analizer finished");
+            ProxyCreator proxyCreator = new ProxyCreator(contentAnalizer.getXmlFile(), contentAnalizer.hasApikitRef(), contentAnalizer.apiIsHttps(), contentAnalizer.proxyIsHttps(), contentAnalizer.containsDescription());
+            proxyCreator.processTemplate(proxyType);
+            logger.debug("Xml file created");
+
         }
-        System.out.println("Migration process finished");
+        logger.info("");
+        logger.info("Migration process finished");
     }
 
     private static String getRootFolder(String[] args)
@@ -70,28 +79,28 @@ public class Main {
     {
         if (!Files.isDirectory(Paths.get(proxyPath)))
         {
-            System.out.println(proxyPath + " is NOT a generated proxy.");
+            logger.info(proxyPath + " is NOT a generated proxy.");
             return ProxyType.INVALID;
         }
         File oldXml = FileManager.getXmlFile(proxyPath);
         String md5 = FileManager.getMD5(oldXml);
-        System.out.println("MD5 "+ md5);
+        logger.debug("MD5 "+ md5);
         if (FileManager.isHttpProxy(md5))
         {
-            System.out.println(proxyPath + " detected as BARE HTTP PROXY");
+            logger.info(proxyPath + " detected as BARE HTTP PROXY");
             return ProxyType.BARE_HTTP_PROXY;
         }
         if (FileManager.isRamlProxy(md5))
         {
-            System.out.println(proxyPath + " detected as APIKIT PROXY");
+            logger.info(proxyPath + " detected as APIKIT PROXY");
             return ProxyType.APIKIT_PROXY;
         }
         if (FileManager.isWsdlProxy(md5))
         {
-            System.out.println(proxyPath + " detected as WSDL PROXY");
+            logger.info(proxyPath + " detected as WSDL PROXY");
             return ProxyType.WSDL_PROXY;
         }
-        System.out.println(proxyPath + " is NOT a generated proxy.");
+        logger.info(proxyPath + " is NOT a generated proxy.");
         return ProxyType.INVALID;
     }
 

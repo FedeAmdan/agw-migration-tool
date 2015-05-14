@@ -20,6 +20,10 @@ public class PropertiesManager {
 
     }
 
+    protected PropertiesManager ()
+    {
+    }
+
     private Map<String, String> parse (String proxyPath) throws IOException {
         Map <String,String> properties = new HashMap<>();
         List<String> lines = FileManager.getFileContentAsList(proxyPath + PROPERTIES_RELATIVE_PATH);
@@ -34,7 +38,7 @@ public class PropertiesManager {
         return properties;
     }
 
-    private Map<String, String> modifyProperties( Map<String, String> oldProperties)
+    protected Map<String, String> modifyProperties( Map<String, String> oldProperties)
     {
         if (isOldTypeOfProxy(oldProperties))
         {
@@ -46,7 +50,7 @@ public class PropertiesManager {
         }
     }
 
-    private Map<String, String> modifyPropertiesOfOldTypeOfProxy( Map<String, String> oldProperties)
+    protected Map<String, String> modifyPropertiesOfOldTypeOfProxy( Map<String, String> oldProperties)
     {
         Map<String, String> newProperties = new HashMap<>();
 
@@ -56,7 +60,7 @@ public class PropertiesManager {
             Map.Entry mapEntry = (Map.Entry) iterator.next();
             String key = mapEntry.getKey().toString();
             String value = mapEntry.getValue().toString();
-            if (key.equals("http.proxy"))
+            if (key.equals("http.port"))
             {
                 newProperties.put("proxy.host", "0.0.0.0");
                 newProperties.put("proxy.port", value);
@@ -68,9 +72,11 @@ public class PropertiesManager {
                 newProperties.put("implementation.port", getPortFromUri(value));
                 newProperties.put("implementation.path", getPathFromUri(value, false));
             }
-            else if (key.equals("raml.uri"))
+            else if (key.equals("raml.location"))
             {
-                newProperties.put("raml.location", value);
+
+                newProperties.put("console.path","/console");
+                newProperties.put(key, value);
             }
             else
             {
@@ -80,7 +86,7 @@ public class PropertiesManager {
         return newProperties;
     }
 
-    private Map<String, String> modifyPropertiesOfNewTypeOfProxy( Map<String, String> oldProperties)
+    protected Map<String, String> modifyPropertiesOfNewTypeOfProxy( Map<String, String> oldProperties)
     {
         Map<String, String> newProperties = new HashMap<>();
 
@@ -115,7 +121,7 @@ public class PropertiesManager {
         return newProperties;
     }
 
-    private boolean isOldTypeOfProxy(Map<String, String> oldProperties)
+    protected boolean isOldTypeOfProxy(Map<String, String> oldProperties)
     {
         Iterator iterator = oldProperties.entrySet().iterator();
         while (iterator.hasNext())

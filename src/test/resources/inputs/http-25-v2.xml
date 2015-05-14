@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:https="http://www.mulesoft.org/schema/mule/https"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+      xmlns:expression-language="http://www.mulesoft.org/schema/mule/expression-language-gw"
+      xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+                          http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+                          http://www.mulesoft.org/schema/mule/https http://www.mulesoft.org/schema/mule/https/current/mule-https.xsd
+                          http://www.mulesoft.org/schema/mule/expression-language-gw http://www.mulesoft.org/schema/mule/expression-language-gw/current/mule-expression-language-gw.xsd
+                          http://www.mulesoft.org/schema/mule/api-platform-gw http://www.mulesoft.org/schema/mule/api-platform-gw/current/mule-api-platform-gw.xsd">
+
+    <expression-language:property-placeholder location="config.properties" />
+
+    <api-platform-gw:api id="![p['api.id']]" apiName="![p['api.name']]" version="![p['api.version']]">
+        <api-platform-gw:description>![p['api.description']]</api-platform-gw:description>
+    </api-platform-gw:api>
+
+    <flow name="proxy" doc:name="HTTP Proxy">
+        <http:inbound-endpoint address="![p['proxy.uri']]" exchange-pattern="request-response" doc:name="HTTP">
+            <api-platform-gw:register-as api-ref="![p['api.id']]" />
+        </http:inbound-endpoint>
+        <set-property propertyName="http.disable.status.code.exception.check" value="true"
+                      doc:name="Disable Exception Check"/>
+        <flow-ref name="copy-headers" doc:name="Copy HTTP Headers"/>
+        <https:outbound-endpoint exchange-pattern="request-response"
+                                 address="![p['implementation.uri']]#[message.inboundProperties['http.relative.path']]?#[message.inboundProperties['http.query.string']]"
+                                 doc:name="Send Requests to API"/>
+        <flow-ref name="copy-headers" doc:name="Copy HTTP Headers"/>
+    </flow>
+
+    <sub-flow name="copy-headers" doc:name="Copy Headers">
+        <copy-properties propertyName="*" doc:name="Copy All HTTP Headers"/>
+        <remove-property propertyName="Content-Length" doc:name="Remove Content Length"/>
+        <remove-property propertyName="MULE_*" doc:name="Remove MULE Properties"/>
+        <remove-property propertyName="X_MULE*" doc:name="Remove X_MULE Properties"/>
+    </sub-flow>
+</mule>
