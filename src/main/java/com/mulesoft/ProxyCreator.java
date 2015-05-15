@@ -9,6 +9,7 @@ import java.util.Properties;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
@@ -49,7 +50,7 @@ public class ProxyCreator
 
     public ProxyCreator (File xmlFile, boolean hasApikitRef, boolean apiIsHttps, boolean proxyIsHttps, boolean containsDescription)
     {
-        BasicConfigurator.configure();
+//        PropertyConfigurator.configure("log4j.properties");
         this.xmlFile = xmlFile;
         setHasApikitRef(hasApikitRef);
         setApiHttps(apiIsHttps);

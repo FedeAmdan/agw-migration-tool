@@ -6,18 +6,24 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 public class PropertiesManager {
 
     public static final String PROPERTIES_RELATIVE_PATH = "/classes/config.properties";
     private static final String DEFAULT_PORT = "80";
     private Map<String, String> oldProperties;
     private Map<String, String> newProperties;
+    final static Logger logger = Logger.getLogger(ProxyCreator.class);
 
-    public PropertiesManager (String proxyPath) throws IOException
+    public PropertiesManager (String proxyPath, boolean listenerHasHttps) throws IOException
     {
         oldProperties = parse(proxyPath);
         newProperties = modifyProperties(oldProperties);
-
+        if (listenerHasHttps)
+        {
+            addHttpsProperties(newProperties);
+        }
     }
 
     protected PropertiesManager ()
@@ -55,6 +61,7 @@ public class PropertiesManager {
         Map<String, String> newProperties = new HashMap<>();
 
         Iterator iterator = oldProperties.entrySet().iterator();
+        boolean generateMissingProperties = true;
         while (iterator.hasNext())
         {
             Map.Entry mapEntry = (Map.Entry) iterator.next();
@@ -72,15 +79,31 @@ public class PropertiesManager {
                 newProperties.put("implementation.port", getPortFromUri(value));
                 newProperties.put("implementation.path", getPathFromUri(value, false));
             }
-            else if (key.equals("raml.location"))
+            else if (key.equals("raml.location") || key.equals("raml.uri"))
             {
 
                 newProperties.put("console.path","/console");
-                newProperties.put(key, value);
+                newProperties.put("raml.location", value);
             }
             else
             {
+                if (key.equals("api.id"))
+                {
+                    generateMissingProperties = false;
+                }
                 newProperties.put(key, value);
+            }
+            if (generateMissingProperties)
+            {
+                newProperties.put("api.id","<insert api id here>");
+                newProperties.put("api.name","<insert api name here>");
+                newProperties.put("api.version", "<insert api version here>");
+                newProperties.put("api.description","<insert api description here>");
+                newProperties.put("implementation.host", "<insert implementation host here>");
+                newProperties.put("implementation.port", "<insert implementation port here>");
+                newProperties.put("implementation.path", "<insert implementation path here>");
+                logger.info("Some properties are not provided (They have to be filled in /classes/config.properties):");
+                logger.info("api.id, api.version, api.name, api.description, implementation.host, implementation.port, implementation.path");
             }
         }
         return newProperties;
@@ -224,6 +247,15 @@ public class PropertiesManager {
             return (DEFAULT_PORT);
         }
         return baseUri.substring(twoDots + 1, slash);
+    }
+
+    public void addHttpsProperties(Map<String,String> properties)
+    {
+        properties.put("keystore.location", "<insert keystore location here>");
+        properties.put("keystore.password", "<insert keystore password here>");
+        properties.put("keystore.key.password", "<insert keystore key password here>");
+        logger.info("KeyStore properties are not provided (They have to be filled in /classes/config.properties):");
+        logger.info("keystore.location, keystore.password, keystore.key.password");
     }
 
 }

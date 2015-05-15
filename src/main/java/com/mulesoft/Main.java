@@ -7,7 +7,12 @@ import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.FileAppender;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
+import org.apache.log4j.PropertyConfigurator;
 
 public class Main {
 
@@ -18,8 +23,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException
     {
-        BasicConfigurator.configure();
-        String rootFolder = getRootFolder(args);
+        String rootFolder = getRootFolder(args);//"/Users/federicoamdan/api-gateway-proxies-test/";
         if(logger.isDebugEnabled()){
             logger.debug("Root folder: " + rootFolder);
         }
@@ -28,7 +32,7 @@ public class Main {
         FileManager.copyFolder(rootFolder + APPS_FOLDER, rootFolder + APPS_BACKUP_FOLDER);
         logger.info("Backup completed");
         logger.info("");
-        logger.info("Proxies analisis:");
+        logger.info("Proxies analysis:");
         File[] proxies = FileManager.listApps(rootFolder + APPS_FOLDER);
         if (proxies == null || proxies.length == 0)
         {
@@ -40,22 +44,28 @@ public class Main {
             int proxyType = getProxyType(proxy.getPath());
             if (proxyType == ProxyType.INVALID)
             {
+                logger.info(proxy.getPath() + " was not updated");
+                logger.info("");
                 continue;
             }
-            PropertiesManager propertiesManager = new PropertiesManager(proxy.getPath());
+            FileContentAnalizer contentAnalizer = new FileContentAnalizer(proxy.getPath());
+            logger.debug("Proxy analizer starting");
+            logger.debug(contentAnalizer.showResults());
+            logger.debug("Proxy analizer finished");
+
+            logger.debug("Properties updater starting");
+            PropertiesManager propertiesManager = new PropertiesManager(proxy.getPath(), contentAnalizer.proxyIsHttps());
             String content = propertiesManager.getFileContent();
             FileManager.replacePropertiesFile(proxy.getPath(), content);
-            logger.info("Properties file created");
+            logger.debug("Properties updater finished");
 
-            FileContentAnalizer contentAnalizer = new FileContentAnalizer(proxy.getPath());
-            logger.debug(contentAnalizer.showResults());
-            logger.info("Content analizer finished");
+            logger.debug("Proxy config generator starting");
             ProxyCreator proxyCreator = new ProxyCreator(contentAnalizer.getXmlFile(), contentAnalizer.hasApikitRef(), contentAnalizer.apiIsHttps(), contentAnalizer.proxyIsHttps(), contentAnalizer.containsDescription());
             proxyCreator.processTemplate(proxyType);
-            logger.debug("Xml file created");
-
+            logger.debug("Proxy config generator finished");
+            logger.info(proxy.getPath() + " was updated");
+            logger.info("");
         }
-        logger.info("");
         logger.info("Migration process finished");
     }
 
@@ -103,5 +113,29 @@ public class Main {
         logger.info(proxyPath + " is NOT a generated proxy.");
         return ProxyType.INVALID;
     }
+
+    //private static void configureLog4j()
+    //{
+    //    //BasicConfigurator.configure();
+    //    ConsoleAppender console = new ConsoleAppender(); //create appender
+    //    //configure the appender
+    //    String PATTERN = "%d [%p|%c|%C{1}] %m%n";
+    //    console.setLayout(new PatternLayout(PATTERN));
+    //    console.setThreshold(Level.INFO);
+    //    console.activateOptions();
+    //    //add appender to any Logger (here is root)
+    //    Logger.getRootLogger().addAppender(console);
+    //
+    //    FileAppender fa = new FileAppender();
+    //    fa.setName("FileLogger");
+    //    fa.setFile("mylog.log");
+    //    fa.setLayout(new PatternLayout("%d %-5p [%c{1}] %m%n"));
+    //    fa.setThreshold(Level.DEBUG);
+    //    fa.setAppend(true);
+    //    fa.activateOptions();
+    //
+    //    //add appender to any Logger (here is root)
+    //    Logger.getRootLogger().addAppender(fa);
+    //}
 
 }

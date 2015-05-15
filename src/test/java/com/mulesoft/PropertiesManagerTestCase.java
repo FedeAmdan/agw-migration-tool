@@ -16,7 +16,6 @@ import org.mockito.Mockito;
 
 public class PropertiesManagerTestCase
 {
-    @Ignore
     @Test
     public void ramlPropertiesV1() throws IOException
     {
@@ -28,15 +27,18 @@ public class PropertiesManagerTestCase
         assertTrue(isOldProxy);
         Map<String,String> newProperties = propertiesManager.modifyPropertiesOfOldTypeOfProxy(properties);
         Map<String,String> expectedProperties = new HashMap<>();
-        expectedProperties.put("api.id","1");
-        expectedProperties.put("api.description","apiDescription");
-        expectedProperties.put("implementation.port","80");
-        expectedProperties.put("raml.location","ramlLocation");
-        expectedProperties.put("api.name","apiName");
-        expectedProperties.put("implementation.host","endpointUri.com");
-        expectedProperties.put("implementation.path","/");
-        expectedProperties.put("api.version","1.1.1");
-        expectedProperties.put("http.port","8081");
+        expectedProperties.put("raml.location","http://endpointUri.com");
+        expectedProperties.put("proxy.host","0.0.0.0");
+        expectedProperties.put("proxy.port","8081");
+        expectedProperties.put("proxy.path","/*");
+        expectedProperties.put("api.id","<insert api id here>");
+        expectedProperties.put("api.name","<insert api name here>");
+        expectedProperties.put("api.version","<insert api version here>");
+        expectedProperties.put("api.description","<insert api description here>");
+        expectedProperties.put("implementation.host", "<insert implementation host here>");
+        expectedProperties.put("implementation.port", "<insert implementation port here>");
+        expectedProperties.put("implementation.path", "<insert implementation path here>");
+        expectedProperties.put("console.path","/console");
         assertEqualsMap(expectedProperties, newProperties);
     }
 
@@ -158,6 +160,38 @@ public class PropertiesManagerTestCase
         expectedProperties.put("implementation.host","endpointUri.com");
         expectedProperties.put("implementation.port","80");
         expectedProperties.put("implementation.path","/");
+        assertEqualsMap(expectedProperties, newProperties);
+    }
+
+    @Test
+    public void httpPropertiesV1WithHttps() throws IOException
+    {
+        PropertiesManager propertiesManager = new PropertiesManager();
+        Map<String,String> properties = new HashMap<String,String>();
+        properties.put("api.id", "1");
+        properties.put("api.name", "apiName");
+        properties.put("api.version", "1.1.1");
+        properties.put("api.description", "apiDescription");
+        properties.put("proxy.uri", "http://endpointUri.com");
+        properties.put("http.port", "8081");
+        boolean isOldProxy = propertiesManager.isOldTypeOfProxy(properties);
+        assertTrue(isOldProxy);
+        Map<String,String> newProperties = propertiesManager.modifyPropertiesOfOldTypeOfProxy(properties);
+        propertiesManager.addHttpsProperties(newProperties);
+        Map<String,String> expectedProperties = new HashMap<>();
+        expectedProperties.put("api.id","1");
+        expectedProperties.put("api.name","apiName");
+        expectedProperties.put("api.version","1.1.1");
+        expectedProperties.put("api.description","apiDescription");
+        expectedProperties.put("proxy.host","0.0.0.0");
+        expectedProperties.put("proxy.port","8081");
+        expectedProperties.put("proxy.path","/*");
+        expectedProperties.put("implementation.host","endpointUri.com");
+        expectedProperties.put("implementation.port","80");
+        expectedProperties.put("implementation.path","/");
+        expectedProperties.put("keystore.location", "<insert keystore location here>");
+        expectedProperties.put("keystore.password", "<insert keystore password here>");
+        expectedProperties.put("keystore.key.password", "<insert keystore key password here>");
         assertEqualsMap(expectedProperties, newProperties);
     }
 
