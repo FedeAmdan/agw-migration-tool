@@ -102,7 +102,7 @@ public class Main {
         }
         if (FileManager.isRamlProxy(md5))
         {
-            logger.info(proxyPath + " detected as APIKIT PROXY");
+            logger.info(proxyPath + " detected as RAML PROXY");
             return ProxyType.APIKIT_PROXY;
         }
         if (FileManager.isWsdlProxy(md5))

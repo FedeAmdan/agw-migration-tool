@@ -93,18 +93,17 @@ public class PropertiesManager {
                 }
                 newProperties.put(key, value);
             }
-            if (generateMissingProperties)
-            {
-                newProperties.put("api.id","<insert api id here>");
-                newProperties.put("api.name","<insert api name here>");
-                newProperties.put("api.version", "<insert api version here>");
-                newProperties.put("api.description","<insert api description here>");
-                newProperties.put("implementation.host", "<insert implementation host here>");
-                newProperties.put("implementation.port", "<insert implementation port here>");
-                newProperties.put("implementation.path", "<insert implementation path here>");
-                logger.info("Some properties are not provided (They have to be filled in /classes/config.properties):");
-                logger.info("api.id, api.version, api.name, api.description, implementation.host, implementation.port, implementation.path");
-            }
+        }
+        if (generateMissingProperties)
+        {
+            newProperties.put("api.id","<insert api id here>");
+            newProperties.put("api.name","<insert api name here>");
+            newProperties.put("api.version", "<insert api version here>");
+            newProperties.put("api.description","<insert api description here>");
+            newProperties.put("implementation.host", "<insert implementation host here>");
+            newProperties.put("implementation.port", "<insert implementation port here>");
+            newProperties.put("implementation.path", "<insert implementation path here>");
+            logger.warn("Some properties are not provided (They have to be filled in /classes/config.properties): \"api.id, api.version, api.name, api.description, implementation.host, implementation.port, implementation.path\"");
         }
         return newProperties;
     }
@@ -254,8 +253,7 @@ public class PropertiesManager {
         properties.put("keystore.location", "<insert keystore location here>");
         properties.put("keystore.password", "<insert keystore password here>");
         properties.put("keystore.key.password", "<insert keystore key password here>");
-        logger.info("KeyStore properties are not provided (They have to be filled in /classes/config.properties):");
-        logger.info("keystore.location, keystore.password, keystore.key.password");
+        logger.warn("KeyStore properties are not provided (They have to be filled in /classes/config.properties): keystore.location, keystore.password, keystore.key.password");
     }
 
 }
