@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule
+        xmlns="http://www.mulesoft.org/schema/mule/core"
+        xmlns:http="http://www.mulesoft.org/schema/mule/http"
+        xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+
+
+    <tls:context name="tls-context-config">
+        <tls:key-store path="${mule.home}/conf/keystore.jks" password="mule123" keyPassword="mule123"/>
+    </tls:context>
+
+    <http:listener-config name="http-lc-localhost:8081" host="localhost" port="8081" protocol="HTTP"/>
+    <http:listener-config name="https-lc-google.com:8081" host="google.com" port="8081" protocol="HTTPS" tlsContext-ref="tls-context-config"/>
+    <http:listener-config name="http-lc-localhost2:8443" host="localhost2" port="8443" protocol="HTTP"/>
+    <http:listener-config name="http-lc-localhost:8443" host="localhost" port="8443" protocol="HTTP"/>
+
+</mule>

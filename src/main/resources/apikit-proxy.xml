@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns:spring="http://www.springframework.org/schema/beans"
-      xmlns="http://www.mulesoft.org/schema/mule/core"
-      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+<mule
+        xmlns="http://www.mulesoft.org/schema/mule/core"
+        xmlns:http="http://www.mulesoft.org/schema/mule/http"
 #if ($proxyHttps || $apiHttps)
       xmlns:https="http://www.mulesoft.org/schema/mule/https"
 #end
@@ -22,11 +22,6 @@
 
     <expression-language:property-placeholder location="config.properties" />
 
-#if ( $proxyHttps )
-    <tls:context name="tls-context-config">
-        <tls:key-store path="![p['keystore.location']]" password="![p['keystore.password']]" keyPassword="![p['keystore.key.password']]"/>
-    </tls:context>
-#end
 #if( $hasApikitRef )
     <api-platform-gw:api id="![p['api.id']]" apiName="![p['api.name']]" version="![p['api.version']]" flowRef="proxy" apikitRef="proxy-config">
 #else
@@ -37,12 +32,6 @@
 #end
     </api-platform-gw:api>
 
-#if ( $proxyHttps )
-    <http:listener-config name="http-listener-config" host="![p['proxy.host']]" port="![p['proxy.port']]" protocol="HTTPS" tlsContext-ref="tls-context-config"/>
-#else
-    <http:listener-config name="http-listener-config" host="![p['proxy.host']]" port="![p['proxy.port']]" protocol="HTTP"/>
-#end
-
 #if ( $apiHttps )
     <http:request-config name="http-request-config" host="![p['implementation.host']]" port="![p['implementation.port']]" basePath="![p['implementation.path']]" protocol="HTTPS"/>
 #else
@@ -52,7 +41,7 @@
     <apikit:proxy-config name="proxy-config" raml="![p['raml.location']]" disableValidations="true"/>
 
     <flow name="proxy">
-        <http:listener config-ref="http-listener-config" path="![p['proxy.path']]" responseStreamingMode="AUTO" parseRequest="false" />
+        <http:listener config-ref="$listenerConfigName" path="![p['proxy.path']]" responseStreamingMode="AUTO" parseRequest="false" />
 
         <apikit:proxy config-ref="proxy-config"/>
         <http:request config-ref="http-request-config" method="#[message.inboundProperties['http.method']]" path="#[message.inboundProperties['http.request.path'].substring(message.inboundProperties['http.listener.path'].length()-2)]" parseResponse="false">
@@ -65,7 +54,7 @@
     </flow>
 
     <flow name="console">
-        <http:listener config-ref="http-listener-config" path="![p['console.path']]" responseStreamingMode="AUTO" parseRequest="false" />
+        <http:listener config-ref="$listenerConfigName" path="![p['console.path']]" responseStreamingMode="AUTO" parseRequest="false" />
         <apikit:console config-ref="proxy-config"/>
     </flow>
 

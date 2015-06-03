@@ -1,79 +1,52 @@
 package com.mulesoft;
 
+import static com.mulesoft.ProxyType.INVALID;
+
+import com.mulesoft.domains.DomainsBuilder;
+import com.mulesoft.domains.ListenerConfigEntry;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.Level;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
-import org.apache.log4j.PropertyConfigurator;
 
-public class Main {
-
+public class Main
+{
     public static final String ROOT_FOLDER_PROPERTY = "-DagwRootFolder";
     public static final String APPS_FOLDER = "apps";
     public static final String APPS_BACKUP_FOLDER = "appsBackup";
-    final static Logger logger = Logger.getLogger(Main.class);
+    public static final String DEFAULT_DOMAIN_FILE = "/domains/default/mule-domain-config.xml";
+
+    private static final Logger LOGGER = Logger.getLogger(Main.class);
+
+    private final String rootFolder;
+
+    public Main(final String rootFolder)
+    {
+        this.rootFolder = rootFolder;
+    }
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException
     {
-        String rootFolder = getRootFolder(args);//"/Users/federicoamdan/api-gateway-proxies-test/";
-        if(logger.isDebugEnabled()){
-            logger.debug("Root folder: " + rootFolder);
-        }
-        logger.info("");
-        logger.info("Creating backup of apps folder in : " + rootFolder + APPS_BACKUP_FOLDER);
-        FileManager.copyFolder(rootFolder + APPS_FOLDER, rootFolder + APPS_BACKUP_FOLDER);
-        logger.info("Backup completed");
-        logger.info("");
-        logger.info("Proxies analysis:");
-        File[] proxies = FileManager.listApps(rootFolder + APPS_FOLDER);
-        if (proxies == null || proxies.length == 0)
+        final String rootFolder = getRootFolder(args);
+        if (rootFolder == null)
         {
-            logger.info("No apps found in " + rootFolder + APPS_FOLDER);
+            LOGGER.error("Usage: java -jar agw-migration-tool.jar " + ROOT_FOLDER_PROPERTY + "=[GATEWAY_ROOT_FOLDER]");
             return;
         }
-        for (File proxy : proxies)
-        {
-            int proxyType = getProxyType(proxy.getPath());
-            if (proxyType == ProxyType.INVALID)
-            {
-                logger.info(proxy.getPath() + " was not updated");
-                logger.info("");
-                continue;
-            }
-            FileContentAnalizer contentAnalizer = new FileContentAnalizer(proxy.getPath());
-            logger.debug("Proxy analizer starting");
-            logger.debug(contentAnalizer.showResults());
-            logger.debug("Proxy analizer finished");
-
-            logger.debug("Properties updater starting");
-            PropertiesManager propertiesManager = new PropertiesManager(proxy.getPath(), contentAnalizer.proxyIsHttps());
-            String content = propertiesManager.getFileContent();
-            FileManager.replacePropertiesFile(proxy.getPath(), content);
-            logger.debug("Properties updater finished");
-
-            logger.debug("Proxy config generator starting");
-            ProxyCreator proxyCreator = new ProxyCreator(contentAnalizer.getXmlFile(), contentAnalizer.hasApikitRef(), contentAnalizer.apiIsHttps(), contentAnalizer.proxyIsHttps(), contentAnalizer.containsDescription());
-            proxyCreator.processTemplate(proxyType);
-            logger.debug("Proxy config generator finished");
-            logger.info(proxy.getPath() + " was updated");
-            logger.info("");
-        }
-        logger.info("Migration process finished");
+        final Main main = new Main(rootFolder);//"/Users/federicoamdan/api-gateway-proxies-test/";
+        main.migrate();
     }
 
     private static String getRootFolder(String[] args)
     {
         if (args.length != 1 || !args[0].contains(ROOT_FOLDER_PROPERTY))
         {
-            throw new IllegalArgumentException("Invalid property. Please use " + ROOT_FOLDER_PROPERTY);
+            return null;
         }
         String folder = args[0].substring(args[0].indexOf("=") + 1);
         if (!folder.endsWith("/"))
@@ -81,37 +54,101 @@ public class Main {
             folder = folder.concat("/");
         }
         return folder;
+    }
 
+    private void migrate() throws IOException, NoSuchAlgorithmException
+    {
+        LOGGER.debug("Root folder: " + rootFolder);
+
+        backupAppsFolder();
+
+        LOGGER.info("");
+        LOGGER.info("Proxies analysis:");
+        File[] proxies = FileManager.listApps(rootFolder + APPS_FOLDER);
+        if (proxies == null || proxies.length == 0)
+        {
+            LOGGER.info("No apps found in " + rootFolder + APPS_FOLDER);
+            return;
+        }
+
+        final DomainsBuilder domainsBuilder = new DomainsBuilder();
+        domainsBuilder.setDefaultDomainLocation(rootFolder + DEFAULT_DOMAIN_FILE);
+
+        for (File proxy : proxies)
+        {
+            final ProxyType proxyType = getProxyType(proxy.getPath());
+            if (INVALID.equals(proxyType))
+            {
+                LOGGER.info(proxy.getPath() + " was not updated");
+                LOGGER.info("");
+                continue;
+            }
+            FileContentAnalyzer contentAnalyzer = new FileContentAnalyzer(proxy.getPath());
+            LOGGER.debug("Proxy analyzer starting");
+            LOGGER.debug(contentAnalyzer.showResults());
+            LOGGER.debug("Proxy analyzer finished");
+
+            LOGGER.debug("Properties updater starting");
+            PropertiesManager propertiesManager = new PropertiesManager(proxy.getPath(), contentAnalyzer.proxyIsHttps());
+            String content = propertiesManager.getFileContent();
+            FileManager.replacePropertiesFile(proxy.getPath(), content);
+            LOGGER.debug("Properties updater finished");
+
+            final ListenerConfigEntry listenerConfigEntry = domainsBuilder.addProxy(contentAnalyzer.proxyIsHttps(), propertiesManager.getProxyHost(), propertiesManager.getProxyPort());
+
+            LOGGER.debug("Proxy config generator starting");
+            ProxyCreator proxyCreator = new ProxyCreator(contentAnalyzer.getXmlFile(), contentAnalyzer.hasApikitRef(), contentAnalyzer.apiIsHttps(),
+                                                         contentAnalyzer.proxyIsHttps(), contentAnalyzer.containsDescription(), listenerConfigEntry.getName());
+            proxyCreator.processTemplate(proxyType);
+
+            LOGGER.debug("Proxy config generator finished");
+            LOGGER.info(proxy.getPath() + " was updated");
+            LOGGER.info("");
+        }
+
+        domainsBuilder.build();
+
+        LOGGER.info("Migration process finished");
+    }
+
+    private void backupAppsFolder() throws IOException
+    {
+        LOGGER.info("");
+        LOGGER.info("Creating backup of apps folder in : " + rootFolder + APPS_BACKUP_FOLDER);
+
+        FileUtils.copyDirectory(new File(rootFolder + APPS_FOLDER), new File(rootFolder + APPS_BACKUP_FOLDER));
+
+        LOGGER.info("Backup completed");
     }
 
 
-    private static int getProxyType(String proxyPath) throws IOException, NoSuchAlgorithmException
+    private ProxyType getProxyType(String proxyPath) throws IOException, NoSuchAlgorithmException
     {
         if (!Files.isDirectory(Paths.get(proxyPath)))
         {
-            logger.info(proxyPath + " is NOT a generated proxy.");
-            return ProxyType.INVALID;
+            LOGGER.info(proxyPath + " is NOT a generated proxy.");
+            return INVALID;
         }
         File oldXml = FileManager.getXmlFile(proxyPath);
         String md5 = FileManager.getMD5(oldXml);
-        logger.debug("MD5 "+ md5);
+        LOGGER.debug("MD5 " + md5);
         if (FileManager.isHttpProxy(md5))
         {
-            logger.info(proxyPath + " detected as BARE HTTP PROXY");
+            LOGGER.info(proxyPath + " detected as BARE HTTP PROXY");
             return ProxyType.BARE_HTTP_PROXY;
         }
         if (FileManager.isRamlProxy(md5))
         {
-            logger.info(proxyPath + " detected as RAML PROXY");
+            LOGGER.info(proxyPath + " detected as RAML PROXY");
             return ProxyType.APIKIT_PROXY;
         }
         if (FileManager.isWsdlProxy(md5))
         {
-            logger.info(proxyPath + " detected as WSDL PROXY");
+            LOGGER.info(proxyPath + " detected as WSDL PROXY");
             return ProxyType.WSDL_PROXY;
         }
-        logger.info(proxyPath + " is NOT a generated proxy.");
-        return ProxyType.INVALID;
+        LOGGER.info(proxyPath + " is NOT a generated proxy.");
+        return INVALID;
     }
 
     //private static void configureLog4j()

@@ -8,15 +8,18 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-public class PropertiesManager {
+public class PropertiesManager
+{
 
     public static final String PROPERTIES_RELATIVE_PATH = "/classes/config.properties";
     private static final String DEFAULT_PORT = "80";
     private Map<String, String> oldProperties;
     private Map<String, String> newProperties;
     final static Logger logger = Logger.getLogger(ProxyCreator.class);
+    private String proxyPort;
+    private String proxyHost;
 
-    public PropertiesManager (String proxyPath, boolean listenerHasHttps) throws IOException
+    public PropertiesManager(String proxyPath, boolean listenerHasHttps) throws IOException
     {
         oldProperties = parse(proxyPath);
         newProperties = modifyProperties(oldProperties);
@@ -26,12 +29,13 @@ public class PropertiesManager {
         }
     }
 
-    protected PropertiesManager ()
+    protected PropertiesManager()
     {
     }
 
-    private Map<String, String> parse (String proxyPath) throws IOException {
-        Map <String,String> properties = new HashMap<>();
+    private Map<String, String> parse(String proxyPath) throws IOException
+    {
+        Map<String, String> properties = new HashMap<>();
         List<String> lines = FileManager.getFileContentAsList(proxyPath + PROPERTIES_RELATIVE_PATH);
         for (String line : lines)
         {
@@ -44,7 +48,7 @@ public class PropertiesManager {
         return properties;
     }
 
-    protected Map<String, String> modifyProperties( Map<String, String> oldProperties)
+    protected Map<String, String> modifyProperties(Map<String, String> oldProperties)
     {
         if (isOldTypeOfProxy(oldProperties))
         {
@@ -56,7 +60,7 @@ public class PropertiesManager {
         }
     }
 
-    protected Map<String, String> modifyPropertiesOfOldTypeOfProxy( Map<String, String> oldProperties)
+    protected Map<String, String> modifyPropertiesOfOldTypeOfProxy(Map<String, String> oldProperties)
     {
         Map<String, String> newProperties = new HashMap<>();
 
@@ -69,8 +73,10 @@ public class PropertiesManager {
             String value = mapEntry.getValue().toString();
             if (key.equals("http.port"))
             {
-                newProperties.put("proxy.host", "0.0.0.0");
-                newProperties.put("proxy.port", value);
+                proxyHost = "0.0.0.0";
+                proxyPort = value;
+                newProperties.put("proxy.host", proxyHost);
+                newProperties.put("proxy.port", proxyPort);
                 newProperties.put("proxy.path", "/*");
             }
             else if (key.equals("proxy.uri"))
@@ -81,8 +87,7 @@ public class PropertiesManager {
             }
             else if (key.equals("raml.location") || key.equals("raml.uri"))
             {
-
-                newProperties.put("console.path","/console");
+                newProperties.put("console.path", "/console");
                 newProperties.put("raml.location", value);
             }
             else
@@ -96,10 +101,10 @@ public class PropertiesManager {
         }
         if (generateMissingProperties)
         {
-            newProperties.put("api.id","<insert api id here>");
-            newProperties.put("api.name","<insert api name here>");
+            newProperties.put("api.id", "<insert api id here>");
+            newProperties.put("api.name", "<insert api name here>");
             newProperties.put("api.version", "<insert api version here>");
-            newProperties.put("api.description","<insert api description here>");
+            newProperties.put("api.description", "<insert api description here>");
             newProperties.put("implementation.host", "<insert implementation host here>");
             newProperties.put("implementation.port", "<insert implementation port here>");
             newProperties.put("implementation.path", "<insert implementation path here>");
@@ -108,7 +113,7 @@ public class PropertiesManager {
         return newProperties;
     }
 
-    protected Map<String, String> modifyPropertiesOfNewTypeOfProxy( Map<String, String> oldProperties)
+    protected Map<String, String> modifyPropertiesOfNewTypeOfProxy(Map<String, String> oldProperties)
     {
         Map<String, String> newProperties = new HashMap<>();
 
@@ -126,12 +131,19 @@ public class PropertiesManager {
                 boolean addAsterisk = name.equals("proxy");
                 if (name.equals("console"))
                 {
-                    newProperties.put(name + ".path", getPathFromUri(value,addAsterisk));
+                    newProperties.put(name + ".path", getPathFromUri(value, addAsterisk));
                 }
                 else
                 {
-                    newProperties.put(name + ".host", getHostFromUri(value));
-                    newProperties.put(name + ".port", getPortFromUri(value));
+                    String host = getHostFromUri(value);
+                    String port = getPortFromUri(value);
+                    if (key.equals("proxy.uri"))
+                    {
+                        proxyHost = host;
+                        proxyPort = port;
+                    }
+                    newProperties.put(name + ".host", host);
+                    newProperties.put(name + ".port", port);
                     newProperties.put(name + ".path", getPathFromUri(value, addAsterisk));
                 }
             }
@@ -145,6 +157,17 @@ public class PropertiesManager {
 
     protected boolean isOldTypeOfProxy(Map<String, String> oldProperties)
     {
+        for (String key : oldProperties.keySet())
+        {
+            if ("http.port".equals(key))
+            {
+                return true;
+            }
+        }
+        return false;
+        /*
+
+
         Iterator iterator = oldProperties.entrySet().iterator();
         while (iterator.hasNext())
         {
@@ -155,6 +178,7 @@ public class PropertiesManager {
             }
         }
         return false;
+        */
     }
 
 
@@ -171,7 +195,8 @@ public class PropertiesManager {
     }
 
 
-    private String getPathFromUri(String baseUri, boolean addAsterisk) {
+    private String getPathFromUri(String baseUri, boolean addAsterisk)
+    {
         int start = baseUri.indexOf("//") + 2;
         if (start == -1)
         {
@@ -181,16 +206,16 @@ public class PropertiesManager {
         int slash = baseUri.indexOf("/", start);
         if (slash == -1 || slash == baseUri.length())
         {
-            return addAsterisk? "/*" : "/";
+            return addAsterisk ? "/*" : "/";
         }
         String path = baseUri.substring(slash, baseUri.length());
-        int curlyBrace = baseUri.indexOf("{",slash);
+        int curlyBrace = baseUri.indexOf("{", slash);
         if (curlyBrace == -1)
         {
-            return addAsterisk? addAsteriskToPath(path): path;
+            return addAsterisk ? addAsteriskToPath(path) : path;
         }
-        path = baseUri.substring(slash,curlyBrace);
-        return addAsterisk? addAsteriskToPath(path): path;
+        path = baseUri.substring(slash, curlyBrace);
+        return addAsterisk ? addAsteriskToPath(path) : path;
     }
 
     public String addAsteriskToPath(String path)
@@ -201,7 +226,7 @@ public class PropertiesManager {
         }
         if (!path.endsWith("*"))
         {
-            path = path.endsWith("/")? path + "*" : path + "/*";
+            path = path.endsWith("/") ? path + "*" : path + "/*";
         }
         return path;
     }
@@ -225,7 +250,7 @@ public class PropertiesManager {
             slash = baseUri.length();
         }
         int hostEnd = twoDots < slash ? twoDots : slash;
-        return baseUri.substring(start,hostEnd);
+        return baseUri.substring(start, hostEnd);
     }
 
     public static String getPortFromUri(String baseUri)
@@ -248,7 +273,7 @@ public class PropertiesManager {
         return baseUri.substring(twoDots + 1, slash);
     }
 
-    public void addHttpsProperties(Map<String,String> properties)
+    public void addHttpsProperties(Map<String, String> properties)
     {
         properties.put("keystore.location", "<insert keystore location here>");
         properties.put("keystore.password", "<insert keystore password here>");
@@ -256,4 +281,13 @@ public class PropertiesManager {
         logger.warn("KeyStore properties are not provided (They have to be filled in /classes/config.properties): keystore.location, keystore.password, keystore.key.password");
     }
 
+    public int getProxyPort()
+    {
+        return Integer.parseInt(proxyPort);
+    }
+
+    public String getProxyHost()
+    {
+        return proxyHost;
+    }
 }
