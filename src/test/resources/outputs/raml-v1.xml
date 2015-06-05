@@ -3,32 +3,36 @@
         xmlns="http://www.mulesoft.org/schema/mule/core"
         xmlns:http="http://www.mulesoft.org/schema/mule/http"
         xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
+        xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit"
         xmlns:expression-language="http://www.mulesoft.org/schema/mule/expression-language-gw"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
         http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
         http://www.mulesoft.org/schema/mule/api-platform-gw http://www.mulesoft.org/schema/mule/api-platform-gw/current/mule-api-platform-gw.xsd
-        http://www.mulesoft.org/schema/mule/expression-language-gw http://www.mulesoft.org/schema/mule/expression-language-gw/current/mule-expression-language-gw.xsd">
+        http://www.mulesoft.org/schema/mule/expression-language-gw http://www.mulesoft.org/schema/mule/expression-language-gw/current/mule-expression-language-gw.xsd
+        http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd">
 
     <expression-language:property-placeholder location="config.properties" />
 
-    <api-platform-gw:api id="![p['api.id']]" apiName="![p['api.name']]" version="![p['api.version']]" flowRef="proxy">
+    <apikit:proxy-config name="proxy-config" raml="![p['raml.location']]" disableValidations="true"/>
+
+    <api-platform-gw:api id="![p['api.id']]" apiName="![p['api.name']]" version="![p['api.version']]" flowRef="proxy" apikitRef="proxy-config">
     </api-platform-gw:api>
 
     <http:request-config name="http-request-config" host="![p['implementation.host']]" port="![p['implementation.port']]" basePath="![p['implementation.path']]" protocol="HTTP"/>
-
-    <apikit:proxy-config name="proxy-config" raml="![p['raml.location']]" disableValidations="true"/>
 
     <flow name="proxy">
         <http:listener config-ref="http-listener-config" path="![p['proxy.path']]" responseStreamingMode="AUTO" parseRequest="false" />
 
         <apikit:proxy config-ref="proxy-config"/>
+        <flow-ref name="copy-headers"/>
         <http:request config-ref="http-request-config" method="#[message.inboundProperties['http.method']]" path="#[message.inboundProperties['http.request.path'].substring(message.inboundProperties['http.listener.path'].length()-2)]" parseResponse="false">
             <http:request-builder>
                 <http:query-params expression="#[message.inboundProperties['http.query.params']]"/>
             </http:request-builder>
             <http:success-status-code-validator values="0..599" />
         </http:request>
+        <flow-ref name="copy-headers"/>
         <exception-strategy ref="defaultExceptionStrategy"/>
     </flow>
 
@@ -47,4 +51,18 @@
             <set-payload value="method not allowed"/>
         </apikit:mapping>
     </apikit:mapping-exception-strategy>
+
+    <sub-flow name="copy-headers">
+    <!--custom-transformer class="com.mulesoft.gateway.extension.CopyHeadersTransformer" /-->
+    <!-- This can be uncommented for customization-->
+        <copy-properties propertyName="*"/>
+        <remove-property propertyName="Host"/>
+        <remove-property propertyName="Content-Length"/>
+        <remove-property propertyName="MULE_*"/>
+        <remove-property propertyName="Connection"/>
+        <remove-property propertyName="Transfer-Encoding"/>
+        <remove-property propertyName="Server"/>
+
+    </sub-flow>
+
 </mule>

@@ -53,12 +53,16 @@
     </flow>
 
     <sub-flow name="copy-headers">
+        <custom-transformer class="com.mulesoft.gateway.extension.CopyHeadersTransformer"/>
+        <!-- This can be uncommented for customization
         <copy-properties propertyName="*"/>
         <remove-property propertyName="Host"/>
         <remove-property propertyName="Content-Length"/>
-        <remove-property propertyName="http.*"/>
         <remove-property propertyName="MULE_*"/>
         <remove-property propertyName="Connection"/>
         <remove-property propertyName="Transfer-Encoding"/>
+        <remove-property propertyName="Server"/>
+        -->
     </sub-flow>
+
 </mule>

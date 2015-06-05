@@ -10,20 +10,18 @@ public class ListenerConfigEntry
     private final String host;
     private final boolean https;
     private final String name;
-    private final String tlsContextRef;
 
     public ListenerConfigEntry(boolean https, String host, int port)
     {
-        this(https, host, port, (https ? "https-lc-" : "http-lc-") + host + "-" + port, null);
+        this(https, host, port, (https ? "https-lc-" : "http-lc-") + host + "-" + port);
     }
 
-    public ListenerConfigEntry(boolean https, String host, int port, String name, String tlsContextRef)
+    public ListenerConfigEntry(boolean https, String host, int port, String name)
     {
         this.https = https;
         this.host = host;
         this.port = port;
         this.name = name;
-        this.tlsContextRef = tlsContextRef;
     }
 
     public int getPort()
@@ -46,11 +44,6 @@ public class ListenerConfigEntry
         return name;
     }
 
-    public String getTlsContextRef()
-    {
-        return tlsContextRef;
-    }
-
     @Override
     public boolean equals(Object o)
     {
@@ -71,7 +64,6 @@ public class ListenerConfigEntry
                 .append(https, that.https)
                 .append(host, that.host)
                 .append(name, that.name)
-                .append(tlsContextRef, that.tlsContextRef)
                 .isEquals();
     }
 
@@ -83,7 +75,6 @@ public class ListenerConfigEntry
                 .append(host)
                 .append(https)
                 .append(name)
-                .append(tlsContextRef)
                 .toHashCode();
     }
 

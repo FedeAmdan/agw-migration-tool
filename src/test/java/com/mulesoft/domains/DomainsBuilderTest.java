@@ -54,10 +54,10 @@ public class DomainsBuilderTest
 
         final Domain domain = getDomain();
         assertEquals(domain.getKeystore(), new TLSKeystoreInformation("${mule.home}/conf/keystore.jks", "mule123", "mule123"));
-        assertTrue(domain.containsListenerConfig(new ListenerConfigEntry(false, "localhost", 8443, "http-lc-localhost:8443", "")));
-        assertTrue(domain.containsListenerConfig(new ListenerConfigEntry(false, "localhost2", 8443, "http-lc-localhost2:8443", "")));
-        assertTrue(domain.containsListenerConfig(new ListenerConfigEntry(false, "localhost", 8081, "http-lc-localhost:8081", "")));
-        assertTrue(domain.containsListenerConfig(new ListenerConfigEntry(true, "google.com", 8081, "https-lc-google.com:8081", "tls-context-config")));
+        assertTrue(domain.containsListenerConfig(new ListenerConfigEntry(false, "localhost", 8443, "http-lc-localhost-8443")));
+        assertTrue(domain.containsListenerConfig(new ListenerConfigEntry(false, "localhost2", 8443, "http-lc-localhost2-8443")));
+        assertTrue(domain.containsListenerConfig(new ListenerConfigEntry(false, "localhost", 8081, "http-lc-localhost-8081")));
+        assertTrue(domain.containsListenerConfig(new ListenerConfigEntry(true, "google.com", 8081, "https-lc-google.com-8081")));
     }
 
     private Domain getDomain()
@@ -81,8 +81,7 @@ public class DomainsBuilderTest
                             "HTTPS".equals(protocol),
                             element.getAttribute("host"),
                             Integer.parseInt(element.getAttribute("port")),
-                            element.getAttribute("name"),
-                            element.getAttribute("tlsContext-ref")));
+                            element.getAttribute("name")));
                 }
             }
 
