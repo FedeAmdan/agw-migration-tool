@@ -112,7 +112,7 @@ public class DomainsBuilderTest
         builder.setDefaultDomainLocation(domainFile);
         builder.build();
         assertThat(loggerList.size(), is(1));
-        assertThat(loggerList.get(0), is("----custom element added {core:other}. It must be migrated manually"));
+        assertThat(loggerList.get(0), is("----custom element found {core:other}. It must be migrated manually"));
     }
 
     private Domain getDomain()

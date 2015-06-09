@@ -148,7 +148,7 @@ public class DomainsBuilder
         }
         else
         {
-            getLogger().warn(String.format("----custom element added {%s}. It must be migrated manually", childNode.getTagName()));
+            getLogger().warn(String.format("----custom element found {%s}. It must be migrated manually", childNode.getTagName()));
         }
     }
 
