@@ -1,25 +1,37 @@
 package com.mulesoft;
 
-public interface ProxyType {
-    public static int BARE_HTTP_PROXY = 0;
-    public static int APIKIT_PROXY = 1;
-    public static int WSDL_PROXY = 2;
-    public static int INVALID = -1;
+public enum ProxyType
+{
+    BARE_HTTP_PROXY
+            {
+                @Override
+                public String getTemplateName()
+                {
+                    return "/bare-http-proxy.xml";
 
-//    private int proxyType = -1;
-//
-//    public ProxyType (int proxyType)
-//    {
-//        setProxyType(proxyType);
-//    }
-//
-//    public void setProxyType(int proxyType)
-//    {
-//        this.proxyType = proxyType;
-//    }
-//
-//    public int getProxyType()
-//    {
-//        return proxyType;
-//    }
+                }
+            }, APIKIT_PROXY
+        {
+            @Override
+            public String getTemplateName()
+            {
+                return "/apikit-proxy.xml";
+            }
+        }, WSDL_PROXY
+        {
+            @Override
+            public String getTemplateName()
+            {
+                return "/wsdl-proxy.xml";
+            }
+        }, INVALID
+        {
+            @Override
+            public String getTemplateName()
+            {
+                throw new IllegalArgumentException("New version of the proxy could not be found.");
+            }
+        };
+
+    public abstract String getTemplateName();
 }

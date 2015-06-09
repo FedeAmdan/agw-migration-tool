@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns:spring="http://www.springframework.org/schema/beans"
-      xmlns="http://www.mulesoft.org/schema/mule/core"
-      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+<mule
+        xmlns="http://www.mulesoft.org/schema/mule/core"
+        xmlns:http="http://www.mulesoft.org/schema/mule/http"
 #if ($proxyHttps || $apiHttps)
-      xmlns:https="http://www.mulesoft.org/schema/mule/https"
+        xmlns:https="http://www.mulesoft.org/schema/mule/https"
 #end
 #if ( $proxyHttps )
-      xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+        xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
 #end
-      xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
-      xmlns:expression-language="http://www.mulesoft.org/schema/mule/expression-language-gw"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
+        xmlns:expression-language="http://www.mulesoft.org/schema/mule/expression-language-gw"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
         http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 #if ($proxyHttps || $apiHttps)
         http://www.mulesoft.org/schema/mule/https http://www.mulesoft.org/schema/mule/https/current/mule-https.xsd
@@ -21,24 +21,12 @@
         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd">
 
     <expression-language:property-placeholder location="config.properties" />
-#if ( $proxyHttps )
-    <tls:context name="tls-context-config">
-        <tls:key-store path="![p['keystore.location']]" password="![p['keystore.password']]" keyPassword="![p['keystore.key.password']]"/>
-    </tls:context>
-
-#end
 
     <api-platform-gw:api id="![p['api.id']]" apiName="![p['api.name']]" version="![p['api.version']]" flowRef="proxy">
 #if( $hasDescription )
         <api-platform-gw:description>![p['api.description']]</api-platform-gw:description>
 #end
     </api-platform-gw:api>
-
-#if ( $proxyHttps )
-    <http:listener-config name="http-listener-config" host="![p['proxy.host']]" port="![p['proxy.port']]" protocol="HTTPS" tlsContext-ref="tls-context-config"/>
-#else
-    <http:listener-config name="http-listener-config" host="![p['proxy.host']]" port="![p['proxy.port']]" protocol="HTTP"/>
-#end
 
 #if ( $apiHttps )
     <http:request-config name="http-request-config" host="![p['implementation.host']]" port="![p['implementation.port']]" basePath="![p['implementation.path']]" protocol="HTTPS"/>
@@ -47,7 +35,7 @@
 #end
 
     <flow name="proxy">
-        <http:listener config-ref="http-listener-config" path="![p['proxy.path']]" responseStreamingMode="AUTO"/>
+        <http:listener config-ref="$listenerConfigName" path="![p['proxy.path']]" responseStreamingMode="AUTO"/>
         <set-session-variable variableName="originalContentType" value="#[message.inboundProperties['Content-Type']]"/>
         <cxf:proxy-service port="![wsdl(p['wsdl.uri']).services[0].preferredPort.name]"
                            namespace="![wsdl(p['wsdl.uri']).targetNamespace]"
@@ -65,12 +53,16 @@
     </flow>
 
     <sub-flow name="copy-headers">
+        <custom-transformer class="com.mulesoft.gateway.extension.CopyHeadersTransformer"/>
+        <!-- This can be uncommented for customization
         <copy-properties propertyName="*"/>
         <remove-property propertyName="Host"/>
         <remove-property propertyName="Content-Length"/>
-        <remove-property propertyName="http.*"/>
         <remove-property propertyName="MULE_*"/>
         <remove-property propertyName="Connection"/>
         <remove-property propertyName="Transfer-Encoding"/>
+        <remove-property propertyName="Server"/>
+        -->
     </sub-flow>
+
 </mule>

@@ -5,15 +5,13 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
 
-public class FileContentAnalizer
+public class FileContentAnalyzer
 {
     private final String content;
     private static final Charset DEFAULT_CHARSET =  StandardCharsets.UTF_8;
     File xmlFile = null;
-    public FileContentAnalizer(String appPath) throws IOException
+    public FileContentAnalyzer(String appPath) throws IOException
     {
         xmlFile = FileManager.getXmlFile(appPath);
         //byte[] encoded = Files.readAllBytes(Paths.get(xmlFile.toPath()getPath()));
@@ -47,6 +45,6 @@ public class FileContentAnalizer
     }
     public String showResults()
     {
-        return "Descrption: " + containsDescription() + " apiIsHttps: " + apiIsHttps() + " proxyIsHttps: " + proxyIsHttps() + " hasApikitRef: " + hasApikitRef();
+        return "Description: " + containsDescription() + ", apiIsHttps: " + apiIsHttps() + ", proxyIsHttps: " + proxyIsHttps() + ", hasAPIKitRef: " + hasApikitRef();
     }
  }
