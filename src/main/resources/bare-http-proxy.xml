@@ -3,15 +3,15 @@
         xmlns="http://www.mulesoft.org/schema/mule/core"
         xmlns:http="http://www.mulesoft.org/schema/mule/http"
 #if ($proxyHttps || $apiHttps)
-      xmlns:https="http://www.mulesoft.org/schema/mule/https"
+        xmlns:https="http://www.mulesoft.org/schema/mule/https"
 #end
 #if ( $proxyHttps )
-      xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+        xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
 #end
-      xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
-      xmlns:expression-language="http://www.mulesoft.org/schema/mule/expression-language-gw"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
+        xmlns:expression-language="http://www.mulesoft.org/schema/mule/expression-language-gw"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 #if ($proxyHttps || $apiHttps)
 http://www.mulesoft.org/schema/mule/https http://www.mulesoft.org/schema/mule/https/current/mule-https.xsd

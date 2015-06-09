@@ -1,7 +1,5 @@
 package com.mulesoft.domains;
 
-import com.mulesoft.Main;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -15,7 +13,6 @@ import java.util.Set;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.commons.collections.Closure;
 import org.apache.log4j.Logger;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -23,13 +20,14 @@ import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 public class DomainsBuilder
 {
 
-    private static final Logger LOGGER = Logger.getLogger(Main.class);
+    private static final Logger LOGGER = Logger.getLogger(DomainsBuilder.class);
     private static final String HTTPS_SHARED_CONNECTOR_NAME = "HTTPS-shared-connector";
     private static final String HTTP_SHARED_CONNECTOR_NAME = "HTTP-shared-connector";
 
@@ -53,7 +51,7 @@ public class DomainsBuilder
 
     public void build()
     {
-        LOGGER.debug("Building new domain configuration...");
+        getLogger().info("Building new domain configuration...");
 
         analyzeCurrentDomain();
 
@@ -77,55 +75,83 @@ public class DomainsBuilder
 
             buffWriter.flush();
 
-            LOGGER.info("Domain configuration successfully updated");
+            getLogger().info("");
+            getLogger().info("Domain configuration successfully updated");
         }
         catch (IOException e)
         {
-            LOGGER.error("Unable to create domain configuration file", e);
+            getLogger().error("Unable to create domain configuration file", e);
         }
 
     }
 
-    private void analyzeCurrentDomain() {
-        LOGGER.info("--analyzing domain configuration in: " + defaultDomainFile);
+    protected Logger getLogger()
+    {
+        return LOGGER;
+    }
+
+    private void analyzeCurrentDomain()
+    {
+        getLogger().info("--Analyzing domain configuration in: " + defaultDomainFile);
         final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         try
         {
             final Document dom = factory.newDocumentBuilder().parse(new File(this.defaultDomainFile));
             final Element rootElement = dom.getDocumentElement();
 
-            findConnectors(rootElement, "https:connector", HTTPS_SHARED_CONNECTOR_NAME, new Closure()
+            // fetches HTTPS connectors
+            onConnectorElementDo(rootElement, "https:connector", HTTPS_SHARED_CONNECTOR_NAME, new NodeElementClosure()
             {
                 @Override
-                public void execute(Object o)
+                public void execute(Element childNode)
                 {
-                    final Element element = (Element) o;
-                    final Element tlsKeyStore = (Element) element.getElementsByTagName("https:tls-key-store").item(0);
-                    setTlsInformation(new TLSKeystoreInformation(tlsKeyStore.getAttribute("path"), tlsKeyStore.getAttribute("keyPassword"), tlsKeyStore.getAttribute("storePassword")));
-                    LOGGER.info("--default HTTPS Shared Connector found: " + tlsInformation);
+                    if ("https:tls-key-store".equals(childNode.getTagName()))
+                    {
+                        setTlsInformation(new TLSKeystoreInformation(childNode.getAttribute("path"), childNode.getAttribute("keyPassword"), childNode.getAttribute("storePassword")));
+                        getLogger().info("----tls information found: " + tlsInformation);
+                    }
+                    else
+                    {
+                        validateDefaultConfiguration(childNode);
+                    }
                 }
             });
 
-            findConnectors(rootElement, "http:connector", HTTP_SHARED_CONNECTOR_NAME, new Closure()
+            // fetches HTTP connectors
+            onConnectorElementDo(rootElement, "http:connector", HTTP_SHARED_CONNECTOR_NAME, new NodeElementClosure()
             {
                 @Override
-                public void execute(Object o)
+                public void execute(Element element)
                 {
-                    LOGGER.info("--default HTTP Shared Connector found");
+                    validateDefaultConfiguration(element);
                 }
             });
 
         }
         catch (ParserConfigurationException | SAXException | IOException e)
         {
-            LOGGER.warn("--could not read domains configuration file", e);
+            getLogger().warn("--could not read domains configuration file", e);
         }
 
     }
 
-    /**
-     * Adds the default domain to this builder. Parses the file and store default HTTP shared connector and tls-key-store
-     */
+    private void validateDefaultConfiguration(Element childNode)
+    {
+        if ("core:service-overrides".equals(childNode.getTagName()))
+        {
+            if (childNode.getChildNodes().getLength() > 0 ||
+                childNode.getAttributes().getLength() > 1 ||
+                !childNode.getAttribute("sessionHandler").equals("org.mule.session.NullSessionHandler"))
+            {
+                getLogger().warn("----custom configuration found in core:service-overrides. It must be migrated manually");
+            }
+        }
+        else
+        {
+            getLogger().warn(String.format("----custom element added {%s}. It must be migrated manually", childNode.getTagName()));
+        }
+    }
+
     public void setDefaultDomainLocation(final String defaultDomainFile)
     {
         this.defaultDomainFile = defaultDomainFile;
@@ -136,26 +162,45 @@ public class DomainsBuilder
         this.tlsInformation = tlsInformation;
     }
 
-    private void findConnectors(Element rootElement, String tagName, String connectorName, Closure closure)
+    private void onConnectorElementDo(Element rootElement, String tagName, String connectorName, NodeElementClosure closure)
     {
+        // Search the connector node
         final NodeList nodeList = rootElement.getElementsByTagName(tagName);
         if (nodeList != null && nodeList.getLength() > 0)
         {
             for (int i = 0; i < nodeList.getLength(); i++)
             {
+                getLogger().info("");
                 final Element element = (Element) nodeList.item(i);
                 final String elementName = element.getAttribute("name");
 
+                // Look for default connector
                 if (connectorName.equals(elementName))
                 {
-                    closure.execute(element);
+                    getLogger().info(String.format("---Migrating default connector {%s}", connectorName));
+                    final NodeList childNodes = element.getChildNodes();
+                    for (int j = 0; j < childNodes.getLength(); j++)
+                    {
+                        if (childNodes.item(j).getNodeType() != Node.ELEMENT_NODE)
+                        {
+                            continue;
+                        }
+
+                        // execute on child elements
+                        closure.execute((Element) childNodes.item(j));
+                    }
                 }
                 else
                 {
-                    LOGGER.warn(String.format("--there is a custom connector {%s} that cannot be migrated automatically", elementName));
+                    getLogger().warn(String.format("---Custom connector {%s} must be migrated manually", elementName));
                 }
             }
         }
     }
 
+    private interface NodeElementClosure
+    {
+
+        void execute(Element element);
+    }
 }

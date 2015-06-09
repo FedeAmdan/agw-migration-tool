@@ -1,8 +1,14 @@
 package com.mulesoft.domains;
 
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,15 +16,19 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -30,20 +40,43 @@ public class DomainsBuilderTest
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
     private String domainFile;
+    private DomainsBuilder builder;
+    private List<String> loggerList;
 
     @Before
     public void before() throws IOException, URISyntaxException
     {
-        domainFile = tempFolder.getRoot().getAbsolutePath() + "mule-domain-config.xml";
+        setDomainsFile("mule-domain-config.xml");
+
+        builder = spy(new DomainsBuilder());
+
+        final Logger logger = spy(Logger.getLogger(DomainsBuilder.class));
+
+        loggerList = new ArrayList<>();
+        doAnswer(new Answer<Object>()
+        {
+            public Object answer(InvocationOnMock invocation)
+            {
+                Object[] args = invocation.getArguments();
+                loggerList.add((String) args[0]);
+                return "called with arguments: " + Arrays.toString(args);
+            }
+        }).when(logger).warn(anyString());
+
+        when(builder.getLogger()).thenReturn(logger);
+    }
+
+    private void setDomainsFile(String fileName) throws IOException, URISyntaxException
+    {
+        domainFile = tempFolder.getRoot().getAbsolutePath() + fileName;
         Files.copy(
-                Paths.get(getClass().getResource("/domains/mule-domain-config.xml").toURI()),
+                Paths.get(getClass().getResource("/domains/" + fileName).toURI()),
                 Paths.get(domainFile));
     }
 
     @Test
-    public void overall() throws IOException, URISyntaxException
+    public void domains() throws IOException, URISyntaxException
     {
-        final DomainsBuilder builder = new DomainsBuilder();
         builder.setDefaultDomainLocation(domainFile);
         builder.addProxy(false, "localhost", 8443);
         builder.addProxy(false, "localhost2", 8443);
@@ -58,6 +91,28 @@ public class DomainsBuilderTest
         assertTrue(domain.containsListenerConfig(new ListenerConfigEntry(false, "localhost2", 8443, "http-lc-localhost2-8443")));
         assertTrue(domain.containsListenerConfig(new ListenerConfigEntry(false, "localhost", 8081, "http-lc-localhost-8081")));
         assertTrue(domain.containsListenerConfig(new ListenerConfigEntry(true, "google.com", 8081, "https-lc-google.com-8081")));
+
+        assertTrue(loggerList.contains("---Custom connector {HTaTP-shared-connector} must be migrated manually"));
+    }
+
+    @Test
+    public void sessionHandler() throws IOException, URISyntaxException
+    {
+        setDomainsFile("mule-domain-config-sessionHandler.xml");
+        builder.setDefaultDomainLocation(domainFile);
+        builder.build();
+        assertThat(loggerList.size(), is(1));
+        assertThat(loggerList.get(0), is("----custom configuration found in core:service-overrides. It must be migrated manually"));
+    }
+
+    @Test
+    public void extraElement() throws IOException, URISyntaxException
+    {
+        setDomainsFile("mule-domain-config-extraElement.xml");
+        builder.setDefaultDomainLocation(domainFile);
+        builder.build();
+        assertThat(loggerList.size(), is(1));
+        assertThat(loggerList.get(0), is("----custom element added {core:other}. It must be migrated manually"));
     }
 
     private Domain getDomain()
