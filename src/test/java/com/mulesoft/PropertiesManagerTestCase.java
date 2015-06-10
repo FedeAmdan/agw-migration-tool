@@ -28,8 +28,6 @@ public class PropertiesManagerTestCase
         Map<String,String> newProperties = propertiesManager.modifyPropertiesOfOldTypeOfProxy(properties);
         Map<String,String> expectedProperties = new HashMap<>();
         expectedProperties.put("raml.location","http://endpointUri.com");
-        expectedProperties.put("proxy.host","0.0.0.0");
-        expectedProperties.put("proxy.port","8081");
         expectedProperties.put("proxy.path","/*");
         expectedProperties.put("api.id","<insert api id here>");
         expectedProperties.put("api.name","<insert api name here>");
@@ -38,7 +36,7 @@ public class PropertiesManagerTestCase
         expectedProperties.put("implementation.host", "<insert implementation host here>");
         expectedProperties.put("implementation.port", "<insert implementation port here>");
         expectedProperties.put("implementation.path", "<insert implementation path here>");
-        expectedProperties.put("console.path","/console");
+        expectedProperties.put("console.path","/console/*");
         assertEqualsMap(expectedProperties, newProperties);
     }
 
@@ -62,13 +60,11 @@ public class PropertiesManagerTestCase
         expectedProperties.put("api.name","apiName");
         expectedProperties.put("api.version","1.1.1");
         expectedProperties.put("api.description","apiDescription");
-        expectedProperties.put("proxy.host","0.0.0.0");
-        expectedProperties.put("proxy.port","8081");
         expectedProperties.put("proxy.path","/*");
         expectedProperties.put("implementation.host","endpointUri.com");
         expectedProperties.put("implementation.port","80");
         expectedProperties.put("implementation.path","/");
-        expectedProperties.put("console.path","/console");
+        expectedProperties.put("console.path","/console/*");
         expectedProperties.put("raml.location","ramlLocation");
         assertEqualsMap(expectedProperties, newProperties);
     }
@@ -94,13 +90,11 @@ public class PropertiesManagerTestCase
         expectedProperties.put("api.name","apiName");
         expectedProperties.put("api.version","1.1.1");
         expectedProperties.put("api.description","apiDescription");
-        expectedProperties.put("proxy.host","0.0.0.0");
-        expectedProperties.put("proxy.port","8081");
         expectedProperties.put("proxy.path","/api/*");
         expectedProperties.put("implementation.host","endpointUri.com");
         expectedProperties.put("implementation.port","80");
         expectedProperties.put("implementation.path","/");
-        expectedProperties.put("console.path","/console");
+        expectedProperties.put("console.path","/console/*");
         expectedProperties.put("raml.location","ramlLocation");
         assertEqualsMap(expectedProperties, newProperties);
     }
@@ -124,13 +118,11 @@ public class PropertiesManagerTestCase
         expectedProperties.put("api.id","1");
         expectedProperties.put("api.name","apiName");
         expectedProperties.put("api.version","1.1.1");
-        expectedProperties.put("proxy.host","0.0.0.0");
-        expectedProperties.put("proxy.port","8081");
         expectedProperties.put("proxy.path","/api/*");
         expectedProperties.put("implementation.host","endpointUri.com");
         expectedProperties.put("implementation.port","80");
         expectedProperties.put("implementation.path","/");
-        expectedProperties.put("console.path","/console");
+        expectedProperties.put("console.path","/console/*");
         expectedProperties.put("raml.location","ramlLocation");
         assertEqualsMap(expectedProperties, newProperties);
     }
@@ -154,8 +146,6 @@ public class PropertiesManagerTestCase
         expectedProperties.put("api.name","apiName");
         expectedProperties.put("api.version","1.1.1");
         expectedProperties.put("api.description","apiDescription");
-        expectedProperties.put("proxy.host","0.0.0.0");
-        expectedProperties.put("proxy.port","8081");
         expectedProperties.put("proxy.path","/*");
         expectedProperties.put("implementation.host","endpointUri.com");
         expectedProperties.put("implementation.port","80");
@@ -183,8 +173,6 @@ public class PropertiesManagerTestCase
         expectedProperties.put("api.name","apiName");
         expectedProperties.put("api.version","1.1.1");
         expectedProperties.put("api.description","apiDescription");
-        expectedProperties.put("proxy.host","0.0.0.0");
-        expectedProperties.put("proxy.port","8081");
         expectedProperties.put("proxy.path","/*");
         expectedProperties.put("implementation.host","endpointUri.com");
         expectedProperties.put("implementation.port","80");
@@ -214,8 +202,6 @@ public class PropertiesManagerTestCase
         expectedProperties.put("api.name","apiName");
         expectedProperties.put("api.version","1.1.1");
         expectedProperties.put("api.description","apiDescription");
-        expectedProperties.put("proxy.host","0.0.0.0");
-        expectedProperties.put("proxy.port","8081");
         expectedProperties.put("proxy.path","/api/*");
         expectedProperties.put("implementation.host","endpointUri.com");
         expectedProperties.put("implementation.port","80");
@@ -242,8 +228,6 @@ public class PropertiesManagerTestCase
         expectedProperties.put("api.name","apiName");
         expectedProperties.put("api.version","1.1.1");
         expectedProperties.put("api.description","apiDescription");
-        expectedProperties.put("proxy.host","0.0.0.0");
-        expectedProperties.put("proxy.port","8081");
         expectedProperties.put("proxy.path","/*");
         expectedProperties.put("wsdl.uri", "endpointUri?wsdl");
         assertEqualsMap(expectedProperties, newProperties);
@@ -260,7 +244,7 @@ public class PropertiesManagerTestCase
         properties.put("api.version", "1.1.1");
         properties.put("api.description", "apiDescription");
         properties.put("proxy.uri", "http://0.0.0.0:8081/api");
-        properties.put("wsdl.uri"," endpointUri?wsdl");
+        properties.put("wsdl.uri","http://endpointUri?wsdl");
         boolean isOldProxy = propertiesManager.isOldTypeOfProxy(properties);
         assertFalse(isOldProxy);
         Map<String,String> newProperties = propertiesManager.modifyPropertiesOfNewTypeOfProxy(properties);
@@ -269,10 +253,8 @@ public class PropertiesManagerTestCase
         expectedProperties.put("api.name","apiName");
         expectedProperties.put("api.version","1.1.1");
         expectedProperties.put("api.description","apiDescription");
-        expectedProperties.put("proxy.host","0.0.0.0");
-        expectedProperties.put("proxy.port","8081");
         expectedProperties.put("proxy.path","/api/*");
-        expectedProperties.put("wsdl.uri"," endpointUri?wsdl");
+        expectedProperties.put("wsdl.uri","http://endpointUri/?wsdl");
         assertEqualsMap(expectedProperties, newProperties);
     }
 

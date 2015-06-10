@@ -1,10 +1,13 @@
 package com.mulesoft;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import javax.ws.rs.core.UriBuilder;
 
 import org.apache.log4j.Logger;
 
@@ -75,8 +78,6 @@ public class PropertiesManager
             {
                 proxyHost = "0.0.0.0";
                 proxyPort = value;
-                newProperties.put("proxy.host", proxyHost);
-                newProperties.put("proxy.port", proxyPort);
                 newProperties.put("proxy.path", "/*");
             }
             else if (key.equals("proxy.uri"))
@@ -85,10 +86,14 @@ public class PropertiesManager
                 newProperties.put("implementation.port", getPortFromUri(value));
                 newProperties.put("implementation.path", getPathFromUri(value, false));
             }
-            else if (key.equals("raml.location") || key.equals("raml.uri"))
+            else if (key.equals("raml.uri") || key.equals("raml.location"))
             {
-                newProperties.put("console.path", "/console");
+                newProperties.put("console.path", "/console/*");
                 newProperties.put("raml.location", value);
+            }
+            else if (key.equals("wsdl.uri"))
+            {
+                newProperties.put(key, correctWsdlUri(value));
             }
             else
             {
@@ -99,6 +104,7 @@ public class PropertiesManager
                 newProperties.put(key, value);
             }
         }
+
         if (generateMissingProperties)
         {
             newProperties.put("api.id", "<insert api id here>");
@@ -116,19 +122,25 @@ public class PropertiesManager
     protected Map<String, String> modifyPropertiesOfNewTypeOfProxy(Map<String, String> oldProperties)
     {
         Map<String, String> newProperties = new HashMap<>();
-
+        boolean consolePathRequired = false;
+        String proxyPath = "";
         Iterator iterator = oldProperties.entrySet().iterator();
         while (iterator.hasNext())
         {
             Map.Entry mapEntry = (Map.Entry) iterator.next();
             String key = mapEntry.getKey().toString();
             String value = mapEntry.getValue().toString();
-            if (key.contains(".uri") && !key.equals("wsdl.uri"))
+            if (key.equals("wsdl.uri"))
+            {
+                newProperties.put(key, correctWsdlUri(value));
+            }
+            else if (key.contains(".uri"))
             {
                 String[] split = key.split("\\.");
                 String name = split[0];
 
-                boolean addAsterisk = name.equals("proxy");
+                boolean addAsterisk = name.equals("proxy") || name.equals("console");
+
                 if (name.equals("console"))
                 {
                     newProperties.put(name + ".path", getPathFromUri(value, addAsterisk));
@@ -142,14 +154,34 @@ public class PropertiesManager
                         proxyHost = host;
                         proxyPort = port;
                     }
-                    newProperties.put(name + ".host", host);
-                    newProperties.put(name + ".port", port);
+                    else
+                    {
+                        newProperties.put(name + ".host", host);
+                        newProperties.put(name + ".port", port);
+                    }
                     newProperties.put(name + ".path", getPathFromUri(value, addAsterisk));
+                    proxyPath = getPathFromUri(value, false);
                 }
             }
             else
             {
-                newProperties.put(mapEntry.getKey().toString(), mapEntry.getValue().toString());
+                if (key.equals("raml.location"))
+                {
+                    consolePathRequired = true;
+                }
+                newProperties.put(key, value);
+            }
+
+        }
+        if (consolePathRequired && !newProperties.keySet().contains("console.path"))
+        {
+            if (proxyPath.equals(""))
+            {
+                newProperties.put("console.path", "/console/*");
+            }
+            else
+            {
+                newProperties.put("console.path", proxyPath + "-console/*");
             }
         }
         return newProperties;
@@ -289,5 +321,24 @@ public class PropertiesManager
     public String getProxyHost()
     {
         return proxyHost;
+    }
+
+    protected String correctWsdlUri(String wsdl)
+    {
+        URI wsdlUri = URI.create(wsdl);
+        if (wsdlUri.getScheme() != null && wsdlUri.getScheme().startsWith("http"))
+        {
+            String path = wsdlUri.getPath() == null ? "" : wsdlUri.getPath();
+
+            if (!path.startsWith("/"))
+            {
+                path = "/" + path;
+                UriBuilder uriBuilder = UriBuilder.fromUri(wsdlUri);
+                uriBuilder.replacePath(path);
+                return uriBuilder.build().toString();
+            }
+        }
+
+        return wsdlUri.toString();
     }
 }
