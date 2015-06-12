@@ -20,7 +20,6 @@ public class ProxyCreator
     private boolean hasDescription = true;
     private boolean isApiHttps = false;
     private boolean isProxyHttps = false;
-    private boolean hasApikitRef = false;
 
     public void setHasDescription(boolean hasDescription)
     {
@@ -37,18 +36,12 @@ public class ProxyCreator
         this.isProxyHttps = isProxyHttps;
     }
 
-    public void setHasApikitRef(boolean hasApikitRef)
-    {
-        this.hasApikitRef = hasApikitRef;
-    }
-
     private File xmlFile;
 
-    public ProxyCreator(File xmlFile, boolean hasApikitRef, boolean apiIsHttps, boolean proxyIsHttps, boolean containsDescription, String listenerConfigName)
+    public ProxyCreator(File xmlFile, boolean apiIsHttps, boolean proxyIsHttps, boolean containsDescription, String listenerConfigName)
     {
         //        PropertyConfigurator.configure("log4j.properties");
         this.xmlFile = xmlFile;
-        setHasApikitRef(hasApikitRef);
         setApiHttps(apiIsHttps);
         setHasDescription(containsDescription);
         setProxyHttps(proxyIsHttps);
@@ -66,7 +59,6 @@ public class ProxyCreator
             context.put("hasDescription", hasDescription);
             context.put("proxyHttps", isProxyHttps);
             context.put("apiHttps", isApiHttps);
-            context.put("hasApikitRef", hasApikitRef);
 
             Properties props = new Properties();
             props.setProperty("resource.loader", "class");

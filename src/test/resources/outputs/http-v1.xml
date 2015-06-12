@@ -19,7 +19,7 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
     <http:request-config name="http-request-config" host="![p['implementation.host']]" port="![p['implementation.port']]" basePath="![p['implementation.path']]" protocol="HTTP"/>
 
     <flow name="proxy">
-        <http:listener config-ref="http-listener-config" path="![p['proxy.path']]" responseStreamingMode="AUTO" parseRequest="false"/>
+        <http:listener config-ref="http-listener-config" path="![p['proxy.path']]" parseRequest="false"/>
         <flow-ref name="copy-headers"/>
         <http:request config-ref="http-request-config" method="#[message.inboundProperties['http.method']]" path="#[message.inboundProperties['http.request.path'].substring(message.inboundProperties['http.listener.path'].length()-2)]" parseResponse="false">
             <http:request-builder>

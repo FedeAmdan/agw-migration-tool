@@ -41,7 +41,7 @@ public class PropertiesManagerTestCase
     }
 
     @Test
-    public void ramlPropertiesV2() throws IOException
+    public void ramlPropertiesV2Http() throws IOException
     {
         PropertiesManager propertiesManager = new PropertiesManager();
         Map<String,String> properties = new HashMap<String,String>();
@@ -63,6 +63,35 @@ public class PropertiesManagerTestCase
         expectedProperties.put("proxy.path","/*");
         expectedProperties.put("implementation.host","endpointUri.com");
         expectedProperties.put("implementation.port","80");
+        expectedProperties.put("implementation.path","/");
+        expectedProperties.put("console.path","/console/*");
+        expectedProperties.put("raml.location","ramlLocation");
+        assertEqualsMap(expectedProperties, newProperties);
+    }
+
+    @Test
+    public void ramlPropertiesV2Https() throws IOException
+    {
+        PropertiesManager propertiesManager = new PropertiesManager();
+        Map<String,String> properties = new HashMap<String,String>();
+        properties.put("api.id", "1");
+        properties.put("api.name", "apiName");
+        properties.put("api.version", "1.1.1");
+        properties.put("api.description", "apiDescription");
+        properties.put("proxy.uri", "https://endpointUri.com");
+        properties.put("raml.location","ramlLocation");
+        properties.put("http.port", "8081");
+        boolean isOldProxy = propertiesManager.isOldTypeOfProxy(properties);
+        assertTrue(isOldProxy);
+        Map<String,String> newProperties = propertiesManager.modifyPropertiesOfOldTypeOfProxy(properties);
+        Map<String,String> expectedProperties = new HashMap<>();
+        expectedProperties.put("api.id","1");
+        expectedProperties.put("api.name","apiName");
+        expectedProperties.put("api.version","1.1.1");
+        expectedProperties.put("api.description","apiDescription");
+        expectedProperties.put("proxy.path","/*");
+        expectedProperties.put("implementation.host","endpointUri.com");
+        expectedProperties.put("implementation.port","443");
         expectedProperties.put("implementation.path","/");
         expectedProperties.put("console.path","/console/*");
         expectedProperties.put("raml.location","ramlLocation");
@@ -167,7 +196,6 @@ public class PropertiesManagerTestCase
         boolean isOldProxy = propertiesManager.isOldTypeOfProxy(properties);
         assertTrue(isOldProxy);
         Map<String,String> newProperties = propertiesManager.modifyPropertiesOfOldTypeOfProxy(properties);
-        propertiesManager.addHttpsProperties(newProperties);
         Map<String,String> expectedProperties = new HashMap<>();
         expectedProperties.put("api.id","1");
         expectedProperties.put("api.name","apiName");
@@ -177,9 +205,6 @@ public class PropertiesManagerTestCase
         expectedProperties.put("implementation.host","endpointUri.com");
         expectedProperties.put("implementation.port","80");
         expectedProperties.put("implementation.path","/");
-        expectedProperties.put("keystore.location", "<insert keystore location here>");
-        expectedProperties.put("keystore.password", "<insert keystore password here>");
-        expectedProperties.put("keystore.key.password", "<insert keystore key password here>");
         assertEqualsMap(expectedProperties, newProperties);
     }
 

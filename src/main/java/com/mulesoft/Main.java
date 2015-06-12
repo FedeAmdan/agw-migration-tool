@@ -38,7 +38,7 @@ public class Main
             LOGGER.error("Usage: java -jar agw-migration-tool.jar " + ROOT_FOLDER_PROPERTY + "=[GATEWAY_ROOT_FOLDER]");
             return;
         }
-        final Main main = new Main(rootFolder);//"/Users/federicoamdan/api-gateway-proxies-test/";
+        final Main main = new Main(rootFolder);
         main.migrate();
     }
 
@@ -89,7 +89,7 @@ public class Main
             LOGGER.debug("Proxy analyzer finished");
 
             LOGGER.debug("Properties updater starting");
-            PropertiesManager propertiesManager = new PropertiesManager(proxy.getPath(), contentAnalyzer.proxyIsHttps());
+            PropertiesManager propertiesManager = new PropertiesManager(proxy.getPath());
             String content = propertiesManager.getFileContent();
             FileManager.replacePropertiesFile(proxy.getPath(), content);
             LOGGER.debug("Properties updater finished");
@@ -97,7 +97,7 @@ public class Main
             final ListenerConfigEntry listenerConfigEntry = domainsBuilder.addProxy(contentAnalyzer.proxyIsHttps(), propertiesManager.getProxyHost(), propertiesManager.getProxyPort());
 
             LOGGER.debug("Proxy config generator starting");
-            ProxyCreator proxyCreator = new ProxyCreator(contentAnalyzer.getXmlFile(), contentAnalyzer.hasApikitRef(), contentAnalyzer.apiIsHttps(),
+            ProxyCreator proxyCreator = new ProxyCreator(contentAnalyzer.getXmlFile(), contentAnalyzer.apiIsHttps(),
                                                          contentAnalyzer.proxyIsHttps(), contentAnalyzer.containsDescription(), listenerConfigEntry.getName());
             proxyCreator.processTemplate(proxyType);
 

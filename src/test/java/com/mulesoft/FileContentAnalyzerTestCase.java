@@ -15,7 +15,6 @@ public class FileContentAnalyzerTestCase
     {
         URL appUrl = getClass().getClassLoader().getResource("appTest");
         FileContentAnalyzer analizer = new FileContentAnalyzer(appUrl.getPath());
-        assertFalse(analizer.hasApikitRef());
         assertFalse(analizer.proxyIsHttps());
         assertFalse(analizer.apiIsHttps());
         assertTrue(analizer.containsDescription());

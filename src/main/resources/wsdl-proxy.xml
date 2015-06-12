@@ -2,20 +2,11 @@
 <mule
         xmlns="http://www.mulesoft.org/schema/mule/core"
         xmlns:http="http://www.mulesoft.org/schema/mule/http"
-#if ($proxyHttps || $apiHttps)
-        xmlns:https="http://www.mulesoft.org/schema/mule/https"
-#end
-#if ( $proxyHttps )
-        xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
-#end
         xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
         xmlns:expression-language="http://www.mulesoft.org/schema/mule/expression-language-gw"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
         http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
-#if ($proxyHttps || $apiHttps)
-        http://www.mulesoft.org/schema/mule/https http://www.mulesoft.org/schema/mule/https/current/mule-https.xsd
-#end
         http://www.mulesoft.org/schema/mule/api-platform-gw http://www.mulesoft.org/schema/mule/api-platform-gw/current/mule-api-platform-gw.xsd
         http://www.mulesoft.org/schema/mule/expression-language-gw http://www.mulesoft.org/schema/mule/expression-language-gw/current/mule-expression-language-gw.xsd
         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd">
@@ -35,7 +26,7 @@
 #end
 
     <flow name="proxy">
-        <http:listener config-ref="$listenerConfigName" path="![p['proxy.path']]" responseStreamingMode="AUTO"/>
+        <http:listener config-ref="$listenerConfigName" path="![p['proxy.path']]"/>
         <set-session-variable variableName="originalContentType" value="#[message.inboundProperties['Content-Type']]"/>
         <cxf:proxy-service port="![wsdl(p['wsdl.uri']).services[0].preferredPort.name]"
                            namespace="![wsdl(p['wsdl.uri']).targetNamespace]"

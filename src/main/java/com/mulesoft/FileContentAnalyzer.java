@@ -14,7 +14,6 @@ public class FileContentAnalyzer
     public FileContentAnalyzer(String appPath) throws IOException
     {
         xmlFile = FileManager.getXmlFile(appPath);
-        //byte[] encoded = Files.readAllBytes(Paths.get(xmlFile.toPath()getPath()));
         byte[] encoded = Files.readAllBytes(xmlFile.toPath());
         content = new String(encoded, DEFAULT_CHARSET);
     }
@@ -34,17 +33,12 @@ public class FileContentAnalyzer
         return content.contains("https:in");
     }
 
-    public boolean hasApikitRef()
-    {
-        return content.contains("apikitRef");
-    }
-
     public File getXmlFile()
     {
         return xmlFile;
     }
     public String showResults()
     {
-        return "Description: " + containsDescription() + ", apiIsHttps: " + apiIsHttps() + ", proxyIsHttps: " + proxyIsHttps() + ", hasAPIKitRef: " + hasApikitRef();
+        return "Description: " + containsDescription() + ", apiIsHttps: " + apiIsHttps() + ", proxyIsHttps: " + proxyIsHttps();
     }
  }

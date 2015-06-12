@@ -15,21 +15,18 @@ public class PropertiesManager
 {
 
     public static final String PROPERTIES_RELATIVE_PATH = "/classes/config.properties";
-    private static final String DEFAULT_PORT = "80";
+    private static final String DEFAULT_PORT_HTTP = "80";
+    private static final String DEFAULT_PORT_HTTPS = "443";
     private Map<String, String> oldProperties;
     private Map<String, String> newProperties;
     final static Logger logger = Logger.getLogger(ProxyCreator.class);
     private String proxyPort;
     private String proxyHost;
 
-    public PropertiesManager(String proxyPath, boolean listenerHasHttps) throws IOException
+    public PropertiesManager(String proxyPath) throws IOException
     {
         oldProperties = parse(proxyPath);
         newProperties = modifyProperties(oldProperties);
-        if (listenerHasHttps)
-        {
-            addHttpsProperties(newProperties);
-        }
     }
 
     protected PropertiesManager()
@@ -300,17 +297,16 @@ public class PropertiesManager
         int twoDots = baseUri.indexOf(":", hostStart);
         if (twoDots == -1 || twoDots > slash)
         {
-            return (DEFAULT_PORT);
+            if (baseUri.startsWith("https"))
+            {
+                return DEFAULT_PORT_HTTPS;
+            }
+            else
+            {
+                return DEFAULT_PORT_HTTP;
+            }
         }
         return baseUri.substring(twoDots + 1, slash);
-    }
-
-    public void addHttpsProperties(Map<String, String> properties)
-    {
-        properties.put("keystore.location", "<insert keystore location here>");
-        properties.put("keystore.password", "<insert keystore password here>");
-        properties.put("keystore.key.password", "<insert keystore key password here>");
-        logger.warn("KeyStore properties are not provided (They have to be filled in /classes/config.properties): keystore.location, keystore.password, keystore.key.password");
     }
 
     public int getProxyPort()

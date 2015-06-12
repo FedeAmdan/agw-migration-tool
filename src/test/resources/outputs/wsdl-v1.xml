@@ -19,7 +19,7 @@
     <http:request-config name="http-request-config" host="![p['implementation.host']]" port="![p['implementation.port']]" basePath="![p['implementation.path']]" protocol="HTTP"/>
 
     <flow name="proxy">
-        <http:listener config-ref="http-listener-config" path="![p['proxy.path']]" responseStreamingMode="AUTO"/>
+        <http:listener config-ref="http-listener-config" path="![p['proxy.path']]"/>
         <set-session-variable variableName="originalContentType" value="#[message.inboundProperties['Content-Type']]"/>
         <cxf:proxy-service port="![wsdl(p['wsdl.uri']).services[0].preferredPort.name]"
                            namespace="![wsdl(p['wsdl.uri']).targetNamespace]"
