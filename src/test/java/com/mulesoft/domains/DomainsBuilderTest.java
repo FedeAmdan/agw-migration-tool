@@ -39,16 +39,17 @@ public class DomainsBuilderTest
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
-    private String domainFile;
+    private String targetFile;
     private DomainsBuilder builder;
     private List<String> loggerList;
+    private String sourceFile;
 
     @Before
     public void before() throws IOException, URISyntaxException
     {
-        setDomainsFile("mule-domain-config.xml");
-
         builder = spy(new DomainsBuilder());
+
+        setDomainsFile("mule-domain-config.xml");
 
         final Logger logger = spy(Logger.getLogger(DomainsBuilder.class));
 
@@ -68,16 +69,19 @@ public class DomainsBuilderTest
 
     private void setDomainsFile(String fileName) throws IOException, URISyntaxException
     {
-        domainFile = tempFolder.getRoot().getAbsolutePath() + fileName;
+        sourceFile = getClass().getResource("/domains/" + fileName).getFile();
+        targetFile = tempFolder.getRoot().getAbsolutePath() + fileName;
         Files.copy(
                 Paths.get(getClass().getResource("/domains/" + fileName).toURI()),
-                Paths.get(domainFile));
+                Paths.get(targetFile));
+
+        builder.setDefaultDomainFile(sourceFile);
+        builder.setTargetDomainLocation(targetFile);
     }
 
     @Test
     public void domains() throws IOException, URISyntaxException
     {
-        builder.setDefaultDomainLocation(domainFile);
         builder.addProxy(false, "localhost", 8443);
         builder.addProxy(false, "localhost2", 8443);
         builder.addProxy(false, "localhost", 8081);
@@ -99,7 +103,6 @@ public class DomainsBuilderTest
     public void sessionHandler() throws IOException, URISyntaxException
     {
         setDomainsFile("mule-domain-config-sessionHandler.xml");
-        builder.setDefaultDomainLocation(domainFile);
         builder.build();
         assertThat(loggerList.size(), is(1));
         assertThat(loggerList.get(0), is("----custom configuration found in core:service-overrides. It must be migrated manually"));
@@ -109,7 +112,6 @@ public class DomainsBuilderTest
     public void extraElement() throws IOException, URISyntaxException
     {
         setDomainsFile("mule-domain-config-extraElement.xml");
-        builder.setDefaultDomainLocation(domainFile);
         builder.build();
         assertThat(loggerList.size(), is(1));
         assertThat(loggerList.get(0), is("----custom element found {core:other}. It must be migrated manually"));
@@ -121,7 +123,7 @@ public class DomainsBuilderTest
         final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         try
         {
-            final Document dom = factory.newDocumentBuilder().parse(new File(domainFile));
+            final Document dom = factory.newDocumentBuilder().parse(new File(targetFile));
             final Element rootElement = dom.getDocumentElement();
 
             final NodeList configList = rootElement.getElementsByTagName("http:listener-config");

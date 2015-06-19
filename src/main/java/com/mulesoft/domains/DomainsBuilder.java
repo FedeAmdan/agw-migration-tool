@@ -4,8 +4,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -34,6 +32,7 @@ public class DomainsBuilder
     private final Set<ListenerConfigEntry> configEntries = new HashSet<>();
     private TLSKeystoreInformation tlsInformation;
     private String defaultDomainFile;
+    private String targetDomainLocation;
 
     public DomainsBuilder()
     {
@@ -68,8 +67,8 @@ public class DomainsBuilder
         final FileWriter writer;
         try
         {
-            Files.move(Paths.get(defaultDomainFile), Paths.get(defaultDomainFile + ".bkp"));
-            writer = new FileWriter(defaultDomainFile);
+            //Files.copy(Paths.get(defaultDomainFile), Paths.get(targetDomainLocation + ".bkp"));
+            writer = new FileWriter(targetDomainLocation);
             final BufferedWriter buffWriter = new BufferedWriter(writer);
             template.merge(context, buffWriter);
 
@@ -152,7 +151,7 @@ public class DomainsBuilder
         }
     }
 
-    public void setDefaultDomainLocation(final String defaultDomainFile)
+    public void setDefaultDomainFile(final String defaultDomainFile)
     {
         this.defaultDomainFile = defaultDomainFile;
     }
@@ -196,6 +195,16 @@ public class DomainsBuilder
                 }
             }
         }
+    }
+
+    public void setTargetDomainLocation(String targetDomainLocation)
+    {
+        this.targetDomainLocation = targetDomainLocation;
+    }
+
+    public String getTargetDomainLocation()
+    {
+        return targetDomainLocation;
     }
 
     private interface NodeElementClosure

@@ -12,43 +12,57 @@ import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 public class Main
 {
-    public static final String ROOT_FOLDER_PROPERTY = "-DagwRootFolder";
+
+    public static final String SOURCE_FOLDER_PROPERTY = "-DagwSourceFolder";
+    public static final String TARGET_FOLDER_PROPERTY = "-DagwTargetFolder";
     public static final String APPS_FOLDER = "apps";
     public static final String APPS_BACKUP_FOLDER = "appsBackup";
     public static final String DEFAULT_DOMAIN_FILE = "/domains/default/mule-domain-config.xml";
 
     private static final Logger LOGGER = Logger.getLogger(Main.class);
 
-    private final String rootFolder;
+    private final String sourceFolder;
+    private final String targetFolder;
 
-    public Main(final String rootFolder)
+    public Main(final String sourceFolder, String targetFolder)
     {
-        this.rootFolder = rootFolder;
+        this.sourceFolder = sourceFolder;
+        this.targetFolder = targetFolder;
     }
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException
     {
-        final String rootFolder = getRootFolder(args);
-        if (rootFolder == null)
+        final String message = "Usage: java -jar [gateway-2.0-home]/tools/agw-migration-tool.jar " + SOURCE_FOLDER_PROPERTY + "=[gateway-1.X-home] " + TARGET_FOLDER_PROPERTY + "=[gateway-2.0-home]";
+
+        if (args.length < 2)
         {
-            LOGGER.error("Usage: java -jar agw-migration-tool.jar " + ROOT_FOLDER_PROPERTY + "=[GATEWAY_ROOT_FOLDER]");
+            LOGGER.error(message);
             return;
         }
-        final Main main = new Main(rootFolder);
+
+        final String source = getFolderFromArguments(args[0], SOURCE_FOLDER_PROPERTY);
+        final String target = getFolderFromArguments(args[1], TARGET_FOLDER_PROPERTY);
+        if (source == null || target == null)
+        {
+            LOGGER.error(message);
+            return;
+        }
+        final Main main = new Main(source, target);//"/Users/federicoamdan/api-gateway-proxies-test/";
         main.migrate();
     }
 
-    private static String getRootFolder(String[] args)
+    private static String getFolderFromArguments(String arg, String property)
     {
-        if (args.length != 1 || !args[0].contains(ROOT_FOLDER_PROPERTY))
+        if (StringUtils.isBlank(arg) || !arg.contains(property))
         {
             return null;
         }
-        String folder = args[0].substring(args[0].indexOf("=") + 1);
+        String folder = arg.substring(arg.indexOf("=") + 1);
         if (!folder.endsWith("/"))
         {
             folder = folder.concat("/");
@@ -58,21 +72,22 @@ public class Main
 
     private void migrate() throws IOException, NoSuchAlgorithmException
     {
-        LOGGER.debug("Root folder: " + rootFolder);
+        LOGGER.debug("Migrating proxies from : " + sourceFolder + " to " + targetFolder);
 
-        backupAppsFolder();
+        copyApps();
 
         LOGGER.info("");
         LOGGER.info("Proxies analysis:");
-        File[] proxies = FileManager.listApps(rootFolder + APPS_FOLDER);
+        File[] proxies = FileManager.listApps(targetFolder + APPS_FOLDER);
         if (proxies == null || proxies.length == 0)
         {
-            LOGGER.info("No apps found in " + rootFolder + APPS_FOLDER);
+            LOGGER.info("No apps found in " + targetFolder + APPS_FOLDER);
             return;
         }
 
         final DomainsBuilder domainsBuilder = new DomainsBuilder();
-        domainsBuilder.setDefaultDomainLocation(rootFolder + DEFAULT_DOMAIN_FILE);
+        domainsBuilder.setDefaultDomainFile(sourceFolder + DEFAULT_DOMAIN_FILE);
+        domainsBuilder.setTargetDomainLocation(targetFolder + DEFAULT_DOMAIN_FILE);
 
         for (File proxy : proxies)
         {
@@ -111,14 +126,12 @@ public class Main
         LOGGER.info("Migration process finished");
     }
 
-    private void backupAppsFolder() throws IOException
+    private void copyApps() throws IOException
     {
         LOGGER.info("");
-        LOGGER.info("Creating backup of apps folder in : " + rootFolder + APPS_BACKUP_FOLDER);
+        LOGGER.info("Copying apps to : target gateway");
 
-        FileUtils.copyDirectory(new File(rootFolder + APPS_FOLDER), new File(rootFolder + APPS_BACKUP_FOLDER));
-
-        LOGGER.info("Backup completed");
+        FileUtils.copyDirectory(new File(sourceFolder + APPS_FOLDER), new File(targetFolder + APPS_FOLDER));
     }
 
 
