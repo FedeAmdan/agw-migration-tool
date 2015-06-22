@@ -14,7 +14,7 @@ import org.apache.velocity.app.Velocity;
 public class ProxyCreator
 {
 
-    private static final Logger logger = Logger.getLogger(ProxyCreator.class);
+    private static final Logger LOGGER = Logger.getLogger(ProxyCreator.class);
 
     private final String listenerConfigName;
     private boolean hasDescription = true;
@@ -53,7 +53,7 @@ public class ProxyCreator
         try
         {
 
-            logger.debug("Adding properties to velocity context");
+            LOGGER.debug("-- creating template context...");
             org.apache.velocity.context.Context context = new VelocityContext();
             context.put("listenerConfigName", listenerConfigName);
             context.put("hasDescription", hasDescription);
@@ -64,14 +64,14 @@ public class ProxyCreator
             props.setProperty("resource.loader", "class");
             props.setProperty("class.resource.loader.class", "org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader");
             Velocity.init(props);
-            logger.debug("Properties created, velocity initialized");
 
+            LOGGER.debug("-- merging template to properties");
             Template t = Velocity.getTemplate(proxyType.getTemplateName(), "UTF-8");
             FileWriter writer = new FileWriter(xmlFile.getPath());
             BufferedWriter buffWriter = new BufferedWriter(writer);
             t.merge(context, buffWriter);
 
-            logger.debug("Template merged to properties");
+            LOGGER.debug("-- migration finished.");
             buffWriter.flush();
         }
         catch (Exception e)

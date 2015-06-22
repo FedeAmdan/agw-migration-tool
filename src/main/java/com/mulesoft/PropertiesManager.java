@@ -13,13 +13,13 @@ import org.apache.log4j.Logger;
 
 public class PropertiesManager
 {
+    private final static Logger LOGGER = Logger.getLogger(ProxyCreator.class);
 
     public static final String PROPERTIES_RELATIVE_PATH = "/classes/config.properties";
     private static final String DEFAULT_PORT_HTTP = "80";
     private static final String DEFAULT_PORT_HTTPS = "443";
     private Map<String, String> oldProperties;
     private Map<String, String> newProperties;
-    final static Logger logger = Logger.getLogger(ProxyCreator.class);
     private String proxyPort;
     private String proxyHost;
 
@@ -111,7 +111,7 @@ public class PropertiesManager
             newProperties.put("implementation.host", "<insert implementation host here>");
             newProperties.put("implementation.port", "<insert implementation port here>");
             newProperties.put("implementation.path", "<insert implementation path here>");
-            logger.warn("Some properties are not provided (They have to be filled in /classes/config.properties): \"api.id, api.version, api.name, api.description, implementation.host, implementation.port, implementation.path\"");
+            LOGGER.warn("- Some properties are not provided (They have to be filled in /classes/config.properties): \"api.id, api.version, api.name, api.description, implementation.host, implementation.port, implementation.path\"");
         }
         return newProperties;
     }

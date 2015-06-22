@@ -99,25 +99,21 @@ public class Main
                 continue;
             }
             FileContentAnalyzer contentAnalyzer = new FileContentAnalyzer(proxy.getPath());
-            LOGGER.debug("Proxy analyzer starting");
-            LOGGER.debug(contentAnalyzer.showResults());
-            LOGGER.debug("Proxy analyzer finished");
+            LOGGER.debug("- " + contentAnalyzer.showResults());
 
-            LOGGER.debug("Properties updater starting");
+            LOGGER.debug("- migrating properties...");
             PropertiesManager propertiesManager = new PropertiesManager(proxy.getPath());
             String content = propertiesManager.getFileContent();
             FileManager.replacePropertiesFile(proxy.getPath(), content);
-            LOGGER.debug("Properties updater finished");
 
             final ListenerConfigEntry listenerConfigEntry = domainsBuilder.addProxy(contentAnalyzer.proxyIsHttps(), propertiesManager.getProxyHost(), propertiesManager.getProxyPort());
 
-            LOGGER.debug("Proxy config generator starting");
+            LOGGER.debug("- migrating proxy...");
             ProxyCreator proxyCreator = new ProxyCreator(contentAnalyzer.getXmlFile(), contentAnalyzer.apiIsHttps(),
                                                          contentAnalyzer.proxyIsHttps(), contentAnalyzer.containsDescription(), listenerConfigEntry.getName());
             proxyCreator.processTemplate(proxyType);
 
-            LOGGER.debug("Proxy config generator finished");
-            LOGGER.info(proxy.getPath() + " was updated");
+            LOGGER.info("- Proxy " + proxy.getPath() + " was updated successfully");
             LOGGER.info("");
         }
 
@@ -129,7 +125,7 @@ public class Main
     private void copyApps() throws IOException
     {
         LOGGER.info("");
-        LOGGER.info("Copying apps to : target gateway");
+        LOGGER.info("Copying apps to target gateway");
 
         FileUtils.copyDirectory(new File(sourceFolder + APPS_FOLDER), new File(targetFolder + APPS_FOLDER));
     }
@@ -147,20 +143,20 @@ public class Main
         LOGGER.debug("MD5 " + md5);
         if (FileManager.isHttpProxy(md5))
         {
-            LOGGER.info(proxyPath + " detected as BARE HTTP PROXY");
+            LOGGER.info("- " + proxyPath + " detected as BARE HTTP PROXY");
             return ProxyType.BARE_HTTP_PROXY;
         }
         if (FileManager.isRamlProxy(md5))
         {
-            LOGGER.info(proxyPath + " detected as RAML PROXY");
+            LOGGER.info("- " + proxyPath + " detected as RAML PROXY");
             return ProxyType.APIKIT_PROXY;
         }
         if (FileManager.isWsdlProxy(md5))
         {
-            LOGGER.info(proxyPath + " detected as WSDL PROXY");
+            LOGGER.info("- " + proxyPath + " detected as WSDL PROXY");
             return ProxyType.WSDL_PROXY;
         }
-        LOGGER.info(proxyPath + " is NOT a generated proxy.");
+        LOGGER.info("- " + proxyPath + " is NOT a generated proxy.");
         return INVALID;
     }
 
