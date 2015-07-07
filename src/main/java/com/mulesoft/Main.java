@@ -5,7 +5,9 @@ import static com.mulesoft.ProxyType.INVALID;
 import com.mulesoft.domains.DomainsBuilder;
 import com.mulesoft.domains.ListenerConfigEntry;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -21,8 +23,9 @@ public class Main
     public static final String SOURCE_FOLDER_PROPERTY = "-DagwSourceFolder";
     public static final String TARGET_FOLDER_PROPERTY = "-DagwTargetFolder";
     public static final String APPS_FOLDER = "apps";
-    public static final String APPS_BACKUP_FOLDER = "appsBackup";
-    public static final String DEFAULT_DOMAIN_FILE = "/domains/default/mule-domain-config.xml";
+    public static final String DEFAULT_DOMAIN_FILE = "domains/default/mule-domain-config.xml";
+    public static final String AGW20_DOMAIN_FILE = "domains/api-gateway/mule-domain-config.xml";
+    public static final String DEPLOY_PROPERTIES_FILE = "/mule-deploy.properties";
 
     private static final Logger LOGGER = Logger.getLogger(Main.class);
 
@@ -52,7 +55,7 @@ public class Main
             LOGGER.error(message);
             return;
         }
-        final Main main = new Main(source, target);//"/Users/federicoamdan/api-gateway-proxies-test/";
+        final Main main = new Main(source, target);
         main.migrate();
     }
 
@@ -86,8 +89,8 @@ public class Main
         }
 
         final DomainsBuilder domainsBuilder = new DomainsBuilder();
-        domainsBuilder.setDefaultDomainFile(sourceFolder + DEFAULT_DOMAIN_FILE);
-        domainsBuilder.setTargetDomainLocation(targetFolder + DEFAULT_DOMAIN_FILE);
+        domainsBuilder.setDefaultDomainFile(sourceFolder + (sourceFolder.endsWith("/")? DEFAULT_DOMAIN_FILE : "/" + DEFAULT_DOMAIN_FILE));
+        domainsBuilder.setTargetDomainLocation(targetFolder + (targetFolder.endsWith("/")? AGW20_DOMAIN_FILE : "/" + AGW20_DOMAIN_FILE));
 
         for (File proxy : proxies)
         {
@@ -105,6 +108,8 @@ public class Main
             PropertiesManager propertiesManager = new PropertiesManager(proxy.getPath());
             String content = propertiesManager.getFileContent();
             FileManager.replacePropertiesFile(proxy.getPath(), content);
+            LOGGER.debug("- migrating mule-deploy.properties...");
+            migrateDeployProperties(proxy.getPath());
 
             final ListenerConfigEntry listenerConfigEntry = domainsBuilder.addProxy(contentAnalyzer.proxyIsHttps(), propertiesManager.getProxyHost(), propertiesManager.getProxyPort());
 
@@ -158,6 +163,18 @@ public class Main
         }
         LOGGER.info("- " + proxyPath + " is NOT a generated proxy.");
         return INVALID;
+    }
+
+    public void migrateDeployProperties(String appPath) throws IOException
+    {
+        String dst = appPath + DEPLOY_PROPERTIES_FILE;
+        FileWriter writer = new FileWriter(dst);
+        BufferedWriter buffWriter = new BufferedWriter(writer);
+        buffWriter.write("encoding=UTF-8\n" +
+                         "domain=api-gateway\n" +
+                         "redeployment.enabled=true\n" +
+                         "config.resources=proxy.xml\n");
+        buffWriter.close();
     }
 
     //private static void configureLog4j()

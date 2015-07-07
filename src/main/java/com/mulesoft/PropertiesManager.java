@@ -120,7 +120,6 @@ public class PropertiesManager
     {
         Map<String, String> newProperties = new HashMap<>();
         boolean consolePathRequired = false;
-        String proxyPath = "";
         Iterator iterator = oldProperties.entrySet().iterator();
         while (iterator.hasNext())
         {
@@ -157,7 +156,6 @@ public class PropertiesManager
                         newProperties.put(name + ".port", port);
                     }
                     newProperties.put(name + ".path", getPathFromUri(value, addAsterisk));
-                    proxyPath = getPathFromUri(value, false);
                 }
             }
             else
@@ -172,14 +170,7 @@ public class PropertiesManager
         }
         if (consolePathRequired && !newProperties.keySet().contains("console.path"))
         {
-            if (proxyPath.equals(""))
-            {
-                newProperties.put("console.path", "/console/*");
-            }
-            else
-            {
-                newProperties.put("console.path", proxyPath + "-console/*");
-            }
+            newProperties.put("console.path", "/console/*");
         }
         return newProperties;
     }
@@ -194,20 +185,6 @@ public class PropertiesManager
             }
         }
         return false;
-        /*
-
-
-        Iterator iterator = oldProperties.entrySet().iterator();
-        while (iterator.hasNext())
-        {
-            Map.Entry mapEntry = (Map.Entry) iterator.next();
-            if (mapEntry.getKey().toString().equals("http.port"))
-            {
-                return true;
-            }
-        }
-        return false;
-        */
     }
 
 
