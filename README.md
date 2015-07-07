@@ -2,7 +2,7 @@
 Tool to migrate API Gateway proxies from endpoints to listeners
 
 How to build it:
-mvn clean compile assembly:single
+mvn clean install
 
 How to use it:
-java -jar -Dlog4j.configuration=file:/Users/federicoamdan/Projects/agw-migration-tool/src/log4j.properties -Dlog4j.debug=true ./target/agw-migration-tool-1.0-SNAPSHOT-jar-with-dependencies.jar -DagwRootFolder=/Users/federicoamdan/api-gateway-proxies-test
+java -jar ./target/api-gateway-migration-tool-2.0-SNAPSHOT.jar -DagwSourceFolder={API Gateway 1.3.x Root Folder} -DagwTargetFolder={API Gateway 2.0 Root Folder}
