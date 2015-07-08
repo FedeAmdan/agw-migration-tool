@@ -150,7 +150,7 @@ public class ProxyCreatorTestCase
         String content = createProxyAndGetContent(ProxyType.WSDL_PROXY, true, false, false);
         assertFalse(content.contains("![p['api.description']]"));
         //assertFalse(content.contains("tls-context-config"));
-        assertTrue(content.contains("basePath=\"![p['implementation.path']]\" protocol=\"HTTPS\""));
+        assertTrue(content.contains("port=\"![wsdl(p['wsdl.uri']).services[0].preferredPort.addresses[0].port]\" protocol=\"HTTPS\""));
     }
 
     @Test
@@ -159,7 +159,7 @@ public class ProxyCreatorTestCase
         String content = createProxyAndGetContent(ProxyType.WSDL_PROXY, true, false, true);
         assertTrue(content.contains("![p['api.description']]"));
         assertFalse(content.contains("tls-context-config"));
-        assertTrue(content.contains("basePath=\"![p['implementation.path']]\" protocol=\"HTTPS\""));
+        assertTrue(content.contains("port=\"![wsdl(p['wsdl.uri']).services[0].preferredPort.addresses[0].port]\" protocol=\"HTTPS\""));
     }
 
     @Test
@@ -168,7 +168,7 @@ public class ProxyCreatorTestCase
         String content = createProxyAndGetContent(ProxyType.WSDL_PROXY, true, true, false);
         assertFalse(content.contains("![p['api.description']]"));
         //assertTrue(content.contains("tls-context-config"));
-        assertTrue(content.contains("basePath=\"![p['implementation.path']]\" protocol=\"HTTPS\""));
+        assertTrue(content.contains("port=\"![wsdl(p['wsdl.uri']).services[0].preferredPort.addresses[0].port]\" protocol=\"HTTPS\""));
     }
 
     @Test
@@ -177,7 +177,7 @@ public class ProxyCreatorTestCase
         String content = createProxyAndGetContent(ProxyType.WSDL_PROXY, true, true, true);
         assertTrue(content.contains("![p['api.description']]"));
         //assertTrue(content.contains("tls-context-config"));
-        assertTrue(content.contains("basePath=\"![p['implementation.path']]\" protocol=\"HTTPS\""));
+        assertTrue(content.contains("port=\"![wsdl(p['wsdl.uri']).services[0].preferredPort.addresses[0].port]\" protocol=\"HTTPS\""));
     }
 
     private String createProxyAndGetContent(ProxyType proxyType, boolean apiIsHttps, boolean proxyIsHttps, boolean containsDescription) throws IOException
