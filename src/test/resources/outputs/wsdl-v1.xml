@@ -13,6 +13,8 @@
         http://www.mulesoft.org/schema/mule/expression-language-gw http://www.mulesoft.org/schema/mule/expression-language-gw/current/mule-expression-language-gw.xsd
         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd">
 
+    <configuration defaultProcessingStrategy="non-blocking"/>
+
     <expression-language:property-placeholder location="config.properties" />
 
     <api-platform-gw:api id="![p['api.id']]" apiName="![p['api.name']]" version="![p['api.version']]" flowRef="proxy">

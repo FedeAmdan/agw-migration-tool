@@ -13,6 +13,8 @@
         http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd">
 
+    <configuration defaultProcessingStrategy="non-blocking"/>
+
     <expression-language:property-placeholder location="config.properties" />
 
     <apikit:proxy-config name="proxy-config" raml="![p['raml.location']]" disableValidations="true"/>
